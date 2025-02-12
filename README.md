@@ -16,5 +16,5 @@ Then edit the files config.env and credentials.env with your api keys and inform
 ## Usage
 To run the project
 ```
-python messengarr/main.py
+python messegarr/main.py
 ```
