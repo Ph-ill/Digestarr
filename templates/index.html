@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messegarr Config</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="form-container">
+        <h1 class="header-text">Messegarr Config</h1>
+
+        <form method="POST">
+            <div class="section">
+                <h2>Config</h2>
+                <label for="SONARR_HOST">Sonarr Host</label>
+                <input type="text" name="SONARR_HOST" value="{{ config_data.SONARR_HOST }}" placeholder="Enter the Sonarr Host address">
+
+                <label for="RADARR_HOST">Radarr Host</label>
+                <input type="text" name="RADARR_HOST" value="{{ config_data.RADARR_HOST }}" placeholder="Enter the Radarr Host address">
+
+                <label for="NUM_RECIPIENTS">Number of Recipients</label>
+                <input type="number" id="NUM_RECIPIENTS" name="NUM_RECIPIENTS" value="{{ config_data.NUM_RECIPIENTS }}" min="0" max="99" required>
+
+                <div class="checkbox-container">
+                    <label for="WHATSAPP_ENABLED">WhatsApp Enabled</label>
+                    <input type="checkbox" id="whatsapp-enabled-checkbox" name="WHATSAPP_ENABLED" {% if config_data.WHATSAPP_ENABLED == 'true' %}checked{% endif %}>
+                </div>
+
+                <div class="checkbox-container">
+                    <label for="TELEGRAM_ENABLED">Telegram Enabled</label>
+                    <input type="checkbox" id="telegram-enabled-checkbox" name="TELEGRAM_ENABLED" {% if config_data.TELEGRAM_ENABLED == 'true' %}checked{% endif %}>
+                </div>
+                <div class="checkbox-container">
+                    <label for="AI_ENABLED">AI Features Enabled</label>
+                    <input type="checkbox" id="ai-enabled-checkbox" name="AI_ENABLED" {% if config_data.AI_ENABLED == 'true' %}checked{% endif %}>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Credentials</h2>
+                <label for="SONARR_API_KEY">Sonarr API Key</label>
+                <input type="password" name="SONARR_API_KEY" value="{{ credentials_data.SONARR_API_KEY }}" placeholder="Enter your Sonarr API key">
+
+                <label for="RADARR_API_KEY">Radarr API Key</label>
+                <input type="password" name="RADARR_API_KEY" value="{{ credentials_data.RADARR_API_KEY }}" placeholder="Enter your Radarr API key">
+
+                <div id="mistral-api-container">
+                    <label for="MISTRAL_API_KEY">Mistral API Key</label>
+                    <input type="password" name="MISTRAL_API_KEY" value="{{ credentials_data.MISTRAL_API_KEY }}" placeholder="Enter your Mistral AI API key">
+                </div>
+
+                <label for="OMDB_API_KEY">OMDB API Key</label>
+                <input type="password" name="OMDB_API_KEY" value="{{ credentials_data.OMDB_API_KEY }}" placeholder="Enter your OMDB API key">
+
+                <div id="telegram-token-container">
+                    <label for="TELEGRAM_TOKEN">Telegram Token</label>
+                    <input type="password" id="telegram-token-field" name="TELEGRAM_TOKEN" value="{{ credentials_data.TELEGRAM_TOKEN }}" placeholder="Enter your Telegram bot Token">
+                </div>
+
+                <div id="recipient-fields-container">
+                    <!-- Dynamic recipient fields will be inserted here -->
+                </div>
+            </div>
+
+            <button type="submit">Save</button>
+        </form>
+    </div>
+
+    <footer>
+        <p>MIT Licensed. Developed by <a href="https://github.com/Ph-ill" target="_blank"><strong>Ph-ill</strong></a></p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const numRecipientsInput = document.getElementById('NUM_RECIPIENTS');
+            const recipientFieldsContainer = document.getElementById('recipient-fields-container');
+            const whatsappCheckbox = document.getElementById('whatsapp-enabled-checkbox');
+            const telegramCheckbox = document.getElementById('telegram-enabled-checkbox');
+
+            // Pass the existing recipient data from server-side into JavaScript
+            const credentialsData = {
+                {% for i in range(1, num_recipients + 1) %}
+                    'PHONE_NUMBER_{{i}}': "{{ credentials_data['PHONE_NUMBER_' + i|string()] }}",
+                    'PHONE_NUMBER_{{i}}_API_KEY': "{{ credentials_data['PHONE_NUMBER_' + i|string() + '_API_KEY'] }}",
+                    'TELEGRAM_CHAT_ID_{{i}}': "{{ credentials_data['TELEGRAM_CHAT_ID_' + i|string()] }}",
+                {% endfor %}
+            };
+
+            // Function to render recipient fields
+            function renderRecipientFields(numRecipients) {
+                // Clear previous recipient fields
+                recipientFieldsContainer.innerHTML = '';
+
+                // Generate fields based on the number of recipients
+                for (let i = 1; i <= numRecipients; i++) {
+                    if (whatsappCheckbox.checked) {
+                        // Phone number input
+                        const phoneNumberField = document.createElement('div');
+                        phoneNumberField.classList.add('recipient-fields', 'whatsapp-field');
+                        phoneNumberField.innerHTML = `
+                            <label for="PHONE_NUMBER_${i}">Phone Number ${i}</label>
+                            <input type="password" name="PHONE_NUMBER_${i}" value="${credentialsData[`PHONE_NUMBER_${i}`] || ''}" placeholder="Enter phone number ${i}" required>
+                        `;
+                        recipientFieldsContainer.appendChild(phoneNumberField);
+
+                        // Phone number API key input
+                        const phoneNumberApiKeyField = document.createElement('div');
+                        phoneNumberApiKeyField.classList.add('recipient-fields', 'whatsapp-field');
+                        phoneNumberApiKeyField.innerHTML = `
+                            <label for="PHONE_NUMBER_${i}_API_KEY">Phone Number ${i} API Key</label>
+                            <input type="password" name="PHONE_NUMBER_${i}_API_KEY" value="${credentialsData[`PHONE_NUMBER_${i}_API_KEY`] || ''}" placeholder="Enter API Key for phone ${i}" required>
+                        `;
+                        recipientFieldsContainer.appendChild(phoneNumberApiKeyField);
+                    }
+
+                    if (telegramCheckbox.checked) {
+                        // Telegram Chat ID input
+                        const telegramChatIdField = document.createElement('div');
+                        telegramChatIdField.classList.add('recipient-fields', 'telegram-field');
+                        telegramChatIdField.innerHTML = `
+                            <label for="TELEGRAM_CHAT_ID_${i}">Telegram Chat ID ${i}</label>
+                            <input type="password" name="TELEGRAM_CHAT_ID_${i}" value="${credentialsData[`TELEGRAM_CHAT_ID_${i}`] || ''}" placeholder="Enter Telegram Chat ID for ${i}" required>
+                        `;
+                        recipientFieldsContainer.appendChild(telegramChatIdField);
+                    }
+                }
+            }
+
+            // Initialize the form with the current number of recipients
+            renderRecipientFields(numRecipientsInput.value);
+
+            // Event listener to dynamically update fields when NUM_RECIPIENTS changes
+            numRecipientsInput.addEventListener('input', function() {
+                renderRecipientFields(numRecipientsInput.value);
+            });
+
+            // Function to toggle visibility of fields based on checkbox state
+            function toggleFieldsVisibility() {
+                const whatsappFields = document.querySelectorAll('.whatsapp-field');
+                const telegramFields = document.querySelectorAll('.telegram-field');
+                const telegramTokenContainer = document.getElementById('telegram-token-container');
+
+                whatsappFields.forEach(field => {
+                    field.style.display = whatsappCheckbox.checked ? 'block' : 'none';
+                });
+
+                telegramFields.forEach(field => {
+                    field.style.display = telegramCheckbox.checked ? 'block' : 'none';
+                });
+
+                telegramTokenContainer.style.display = telegramCheckbox.checked ? 'block' : 'none';
+            }
+
+            // Add event listeners to checkboxes
+            whatsappCheckbox.addEventListener('change', function() {
+                renderRecipientFields(numRecipientsInput.value);
+                toggleFieldsVisibility();
+            });
+            telegramCheckbox.addEventListener('change', function() {
+                renderRecipientFields(numRecipientsInput.value);
+                toggleFieldsVisibility();
+            });
+
+            // Initial toggle based on checkbox state
+            toggleFieldsVisibility();
+
+            function toggleMistralApiField() {
+                var mistralApiContainer = document.getElementById('mistral-api-container');
+                var aiEnabledCheckbox = document.getElementById('ai-enabled-checkbox');
+                if (aiEnabledCheckbox.checked) {
+                    mistralApiContainer.style.display = 'block'; // Show the input field
+                } else {
+                    mistralApiContainer.style.display = 'none'; // Hide the input field
+                }
+            }
+
+            // Run on page load to check initial state
+            window.onload = function() {
+                toggleMistralApiField();
+            };
+
+            // Run whenever the checkbox is changed
+            document.getElementById('ai-enabled-checkbox').addEventListener('change', toggleMistralApiField);
+        });
+    </script>
+</body>
+</html>

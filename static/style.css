@@ -1,0 +1,147 @@
+
+body {
+    font-family: 'Helvetica', sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 10px;
+    background: linear-gradient(to bottom right, #f0f0f0, #e5e5e5); /* Slight gradient */
+    background-attachment: fixed; /* Parallax effect */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+}
+
+.form-container {
+    background-color: #fff; /* White background for the form */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); /* Drop shadow */
+    flex-grow: 1;
+}
+
+input[type="text"], input[type="number"], input[type="password"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+label {
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+}
+
+.section {
+    margin-bottom: 30px;
+}
+
+button {
+    background-color: #ff6600;
+    color: white;
+    padding: 20px 50px; /* Larger and wider */
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: block;
+    margin: 30px auto; /* Center the button */
+    width: 70%; /* Wider button */
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0px 5px 15px rgba(255, 102, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #e65c00;
+    box-shadow: 0px 8px 20px rgba(255, 102, 0, 0.5);
+    transform: scale(1.05);
+}
+
+button:active {
+    background-color: #cc5200;
+    box-shadow: 0px 3px 10px rgba(255, 102, 0, 0.4);
+}
+
+input[type="checkbox"] {
+    margin-left: 10px;
+    width: 20px;
+    height: 20px;
+    background-color: #ff6600; /* Orange background */
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid #ff6600; /* Match button's border */
+    appearance: none; /* Removes default styling */
+    position: relative; /* To position the custom checkmark */
+}
+
+input[type="checkbox"]:checked {
+    background-color: #e65c00; /* Darker shade of orange */
+}
+
+input[type="checkbox"]:checked::before {
+    content: '✔'; /* Adds a checkmark */
+    color: white;
+    font-size: 16px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.checkbox-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.header-text {
+    font-family: 'Impact', sans-serif, 'Arial Black', sans-serif; /* Similar font family to Garry's Mod */
+    font-weight: 900;
+    font-size: 50px; /* Adjusted font size */
+    letter-spacing: -3px; /* Added letter-spacing for effect */
+    padding-bottom: 3px;
+    line-height: 55px;
+    text-align: center;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-size: 400%;
+    animation: move 5s ease infinite;
+    background-image: linear-gradient(68.7deg, rgba(255, 94, 0, 1) 13.2%, rgba(255, 102, 0, 1) 29.8%, rgba(255, 123, 0, 1) 48.9%, rgba(255, 160, 0, 1) 68.2%, rgba(255, 183, 0, 1) 86.4%);
+}
+
+@keyframes move {
+    0%, 100% {
+        background-position: 200% 0%;
+    }
+
+    50% {
+        background-position: 0% 200%;
+    }
+}
+
+footer {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    padding: 10px 0;
+    margin-top: 20px;
+}
+
+footer a {
+    color: #ff6600;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}

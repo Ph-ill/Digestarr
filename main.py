@@ -1,3 +1,4 @@
+
 import os
 import time
 import random
@@ -24,12 +25,16 @@ load_dotenv(dotenv_path='credentials.env', override=True)
 sonarr_host = os.getenv('SONARR_HOST')
 radarr_host = os.getenv('RADARR_HOST')
 num_recipients = int(os.getenv('NUM_RECIPIENTS'))
+whatsapp_enabled = os.getenv('WHATSAPP_ENABLED').lower() == 'true'
+telegram_enabled = os.getenv('TELEGRAM_ENABLED').lower() == 'true'
+ai_enabled = os.getenv('AI_ENABLED').lower() == 'true'
 
 # Load Credential Variables
 ai_api_key = os.getenv('MISTRAL_API_KEY')
 omdb_api_key = os.getenv('OMDB_API_KEY')
 sonarr_api_key = os.getenv('SONARR_API_KEY')
 radarr_api_key = os.getenv('RADARR_API_KEY')
+telegram_token = os.getenv('TELEGRAM_TOKEN')
 
 # timedeltastore for testing different dates
 timedeltastore = 0
@@ -71,16 +76,14 @@ def fetch_imdb_score(movie_title, is_series=False):
 def parse_movie_resource(resource_obj):
     parsed_data = {
         'title': resource_obj.title,
-        'release_date': resource_obj.in_cinemas,
+        'year': resource_obj.year,
         'physical_release': resource_obj.physical_release,
         'digital_release': resource_obj.digital_release,
         'monitored': resource_obj.monitored,
         'status': resource_obj.status,
         'minimum_availability': resource_obj.minimum_availability
-        
     }
-    if isinstance(resource_obj.in_cinemas, datetime):
-        parsed_data['release_date'] = resource_obj.in_cinemas.replace(tzinfo=None)
+
     return parsed_data
 
 # Fetch and parse Radarr data
@@ -101,7 +104,6 @@ current_time = datetime.now()+timedelta(days=timedeltastore)
 ## Loop through each movie
 for movie in parsed_movies:
     title = movie['title']
-    release_date = movie['release_date']
     physical_release = movie['physical_release']
     digital_release = movie['digital_release']
     
@@ -117,8 +119,6 @@ for movie in parsed_movies:
         # Check if the digital_release is within the 24-hour window
         if time_window_start <= digital_release_naive <= time_window_end:
             imdb_rating, imdb_link = fetch_imdb_score(title)
-            
-            year = release_date.year if release_date else 'N/A'
             
             imdb_rating_str = f"{imdb_rating}/10" if imdb_rating != 'N/A' else imdb_rating
 
@@ -172,7 +172,7 @@ def extract_series_name(series_id):
 for parsed_data in parsed_list:
     series_name = extract_series_name(parsed_data['series_id'])
     episode_name = parsed_data['title']
-    season_number = add_leading_zero_if_single_digit(str(parsed_dataadd_leading_zero_if_single_digit['season_number']))
+    season_number = add_leading_zero_if_single_digit(str(parsed_data['season_number']))
     episode_number = add_leading_zero_if_single_digit(str(parsed_data['episode_number']))
     
     imdb_rating, imdb_link = fetch_imdb_score(series_name, is_series=True)
@@ -182,28 +182,32 @@ for parsed_data in parsed_list:
 # Prepare the payload with both Sonarr and Radarr output
 # Function to generate emoji with delay for each title
 def generate_with_delay(text, api_key):
-    emoji_string = generate_emojis_from_text(text, ai_api_key)
-    time.sleep(30)  # Wait 30 seconds to respect the API rate limit
-    return emoji_string
+    if ai_enabled:
+        emoji_string = generate_emojis_from_text(text, ai_api_key)
+        time.sleep(30)  # Wait 30 seconds to respect the API rate limit
+        return emoji_string
+    else:
+        return ""
 
 # Generate sonarr_messages (generate emojis for episode title and place them after the title)
 sonarr_messages = "\n-\n".join([
-    f"{extract_series_name(data['series_id'])} - {data['title']} {generate_with_delay(data['title'], api_key)}\n"
+    f"{extract_series_name(data['series_id'])} - {data['title']}" +
+    (f" {generate_with_delay(data['title'], ai_api_key)}" if ai_enabled else "") + "\n"
     f"S{add_leading_zero_if_single_digit(str(data['season_number']))}E{add_leading_zero_if_single_digit(str(data['episode_number']))}\n"
     f"Rating: {fetch_imdb_score(extract_series_name(data['series_id']), is_series=True)[0]}/10\n"
-    f"https://www.imdb.com/title/{fetch_imdb_score(extract_series_name(data['series_id']), is_series=True)[1]}/"
+    f"{fetch_imdb_score(extract_series_name(data['series_id']), is_series=True)[1]}"
     for data in parsed_list
 ])
+
 
 # Check if there are no TV shows and provide a default message
 if not sonarr_messages:
     sonarr_messages = "Sorry no shows today 😔"
 
-# Generate radarr_messages (generate emojis for movie titles)
 radarr_messages = "\n-\n".join([
-    f"{movie['title']} {generate_with_delay(movie['title'], api_key)} ({movie['release_date'].year if movie['release_date'] else 'N/A'})\n"
+    f"{movie['title']} ({movie['year']}) {generate_with_delay(movie['title'], ai_api_key)}\n"
     f"Rating: {fetch_imdb_score(movie['title'])[0]}/10\n"
-    f"https://www.imdb.com/title/{fetch_imdb_score(movie['title'])[1]}/"
+    f"{fetch_imdb_score(movie['title'])[1]}"
     for movie in parsed_movies
 ])
 
@@ -218,16 +222,20 @@ message_body = f"=^..^= Today's Content =^..^=\n\n📺 TV Shows:\n{sonarr_messag
 print(message_body)
 
 for i in range(num_recipients):
+    if whatsapp_enabled == True:
+        # Your phone number and API key
+        phone_number = os.getenv(f"PHONE_NUMBER_{i+1}")
+        api_key = os.getenv(f"PHONE_NUMBER_{i+1}_API_KEY")
 
-    # Your phone number and API key
-    phone_number = os.getenv(f"PHONE_NUMBER_{i+1}")
-    api_key = os.getenv(f"PHONE_NUMBER_{i+1}_API_KEY")
+        # Construct the URL
+        url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={message_body}&apikey={api_key}"
 
-    # Construct the URL
-    url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={message_body}&apikey={api_key}"
+        # Send the message
+        response = requests.get(url)
 
-    # Send the message
-    response = requests.get(url)
-
-    # Print the response from CallMeBot
-    print(response.text)
+        # Print the response from CallMeBot
+        print(response.text)
+    
+    if telegram_enabled == True:
+        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={os.getenv(f"TELEGRAM_CHAT_ID_{i+1}")}&text={message_body}"
+        print(requests.get(url).json()) 
