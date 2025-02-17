@@ -3,7 +3,7 @@
   <h1>Digestarr</h1>
 </div>
 
-**Digestarr** is a Python-based tool that compiles and sends daily media digests about new TV shows and movies sourced from Sonarr and Radarr for your Plex, Jellyfin, or Emby server. With a user-friendly Flask configurator, Digestarr simplifies managing API keys, scheduling updates, and delivering notifications via Telegram and WhatsApp (using [ChatMeBot](https://chatmebot.com)).
+**Digestarr** (pronounced "digest-arr") is a Python-based tool that compiles and sends daily media digests about new TV shows and movies sourced from Sonarr and Radarr for your Plex, Jellyfin, or Emby server. With a user-friendly Flask configurator, Digestarr simplifies managing API keys, scheduling updates, and delivering notifications via Telegram and WhatsApp (using [ChatMeBot](https://chatmebot.com)).
 
 ---
 
@@ -153,4 +153,3 @@ Digestarr is released under the [MIT License](LICENSE).
 
 Contributions are welcome! Feel free to fork the repository and submit pull requests for improvements or bug fixes.
 
-*Note: Git is not required to run Digestarr—you can also download the source code as a ZIP from GitHub and follow the installation instructions above.*
