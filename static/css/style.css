@@ -1,0 +1,258 @@
+@font-face {
+    font-family: 'Bebas Neue';
+    src: url('../fonts/BebasNeue-Regular.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+}
+
+body {
+    font-family: 'Helvetica', sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    border-radius: 10px;
+    background: linear-gradient(to bottom right, #f0f0f0, #e5e5e5); /* Slight gradient */
+    background-attachment: fixed; /* Parallax effect */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+}
+
+.form-container {
+    background-color: #fff; /* White background for the form container */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); /* Drop shadow */
+    flex-grow: 1;
+}
+
+/* Icon header styles */
+.icon-header {
+    text-align: center;
+    margin-bottom: 1px;  /* Reduced gap */
+}
+
+.icon-header img {
+    width: 100px;
+    height: 100px;
+    display: inline-block;
+}
+
+
+/* Make each section stand out with a subtle border and background color */
+.section {
+    margin-bottom: 30px;
+    padding: 20px;
+    background-color: #fafafa; /* Slightly off-white to separate from container */
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* Style the section headings to further distinguish each block */
+.section h2 {
+    font-size: 22px;
+    margin-top: 0;
+    margin-bottom: 15px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #ccc;
+    color: #333;
+}
+
+/* Input fields styling */
+input[type="text"],
+input[type="number"],
+input[type="password"],
+input[type="time"] {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    box-sizing: border-box;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+label {
+    font-weight: bold;
+    font-size: 18px;
+    color: #333;
+}
+
+button {
+    background-color: #ff6600;
+    color: white;
+    padding: 20px 50px; /* Larger and wider */
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: block;
+    margin: 30px auto; /* Center the button */
+    width: 70%; /* Wider button */
+    font-size: 22px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0px 5px 15px rgba(255, 102, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    background-color: #e65c00;
+    box-shadow: 0px 8px 20px rgba(255, 102, 0, 0.5);
+    transform: scale(1.05);
+}
+
+button:active {
+    background-color: #cc5200;
+    box-shadow: 0px 3px 10px rgba(255, 102, 0, 0.4);
+}
+
+/* Checkbox styling */
+input[type="checkbox"] {
+    margin-left: 10px;
+    width: 20px;
+    height: 20px;
+    background-color: #ff6600; /* Orange background */
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid #ff6600; /* Match button's border */
+    appearance: none; /* Removes default styling */
+    position: relative; /* To position the custom checkmark */
+}
+
+input[type="checkbox"]:checked {
+    background-color: #e65c00; /* Darker shade of orange */
+}
+
+input[type="checkbox"]:checked::before {
+    content: '✔'; /* Adds a checkmark */
+    color: white;
+    font-size: 16px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.checkbox-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.header-text {
+    font-family: 'Bebas Neue', sans-serif;
+    font-weight: 700;
+    font-size: 60px;
+    letter-spacing: 2px;
+    line-height: 60px;
+    text-align: center;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    background-size: 400%;
+    animation: move 5s ease infinite;
+    background-image: linear-gradient(
+        68.7deg,
+        rgba(255, 94, 0, 1) 13.2%,
+        rgba(255, 102, 0, 1) 29.8%,
+        rgba(255, 123, 0, 1) 48.9%,
+        rgba(255, 160, 0, 1) 68.2%,
+        rgba(255, 183, 0, 1) 86.4%
+    );
+    margin-top: 0;       /* Reduced white space above the text */
+    margin-bottom: 20px;
+}
+
+
+@keyframes move {
+    0%, 100% {
+        background-position: 200% 0%;
+    }
+    50% {
+        background-position: 0% 200%;
+    }
+}
+
+/* Footer styling */
+footer {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    padding: 10px 0;
+    margin-top: 20px;
+}
+
+footer a {
+    color: #ff6600;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Modal styles */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%;
+    text-align: center;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: red;
+}
+
+/* ==================== */
+/* Scheduling Fixes     */
+/* ==================== */
+
+/* 1. Better alignment for day checkboxes */
+.day-selectors {
+    display: flex;
+    flex-wrap: wrap; /* Allows wrapping if there's not enough horizontal space */
+    gap: 10px;       /* Spacing between each label/checkbox pair */
+}
+
+.day-selectors label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.day-selectors input[type="checkbox"] {
+    margin-left: 0;    /* Remove default left margin */
+    margin-right: 5px; /* Small spacing before day name */
+}
+
+/* 2. Reduce time input width for scheduling */
+.section input[type="time"] {
+    width: auto;
+    max-width: 150px;
+    display: inline-block;
+}

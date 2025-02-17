@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <!-- Orange-to-yellow gradient -->
+    <linearGradient id="gradChat" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:rgba(255,94,0,1);stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:rgba(255,183,0,1);stop-opacity:1"/>
+    </linearGradient>
+  </defs>
+  <!-- Background shape: mostly circular with a slightly rounded bottom-left corner -->
+  <path fill="url(#gradChat)" d="
+    M64,0
+    A64,64 0 0,1 128,64
+    A64,64 0 0,1 64,128
+    L16,128
+    Q0,128 0,112
+    L0,64
+    A64,64 0 0,1 64,0
+    Z
+  "/>
+  <!-- Centered large white 'D' -->
+  <text x="64" y="66" text-anchor="middle" dominant-baseline="middle"
+        font-family="'Bebas Neue', sans-serif" font-size="120" fill="#fff" font-weight="700">
+    D
+  </text>
+</svg>
