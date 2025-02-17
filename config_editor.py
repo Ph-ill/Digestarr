@@ -12,6 +12,9 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(m
 
 app = Flask(__name__)
 
+# Global scheduler instance
+scheduler = BackgroundScheduler()
+
 # Load .env files
 config_env_file = Path('config.env')
 credentials_env_file = Path('credentials.env')
@@ -28,6 +31,44 @@ def save_to_env_file(env_file, data):
     # Write back the updated content, effectively removing any old variables not in `data`
     with open(env_file, 'w') as file:
         file.writelines(updated_lines)
+
+def run_main_script():
+    """Run main.py to pull data, compose messages, and send them."""
+    logging.info(f"Running main.py at {datetime.datetime.now()}")
+    result = subprocess.run(['bin/python', 'main.py'], capture_output=True, text=True)
+    logging.info(f"main.py executed. Return code: {result.returncode}")
+    logging.debug(f"Output from main.py: {result.stdout}")
+    if result.stderr:
+        logging.error(f"Errors from main.py: {result.stderr}")
+
+def update_scheduler():
+    """Update (or initialize) the scheduler job based on current .env settings."""
+    schedule_time = os.getenv("SCHEDULE_TIME", "08:00")
+    schedule_days = os.getenv("SCHEDULE_DAYS", "mon,tue,wed,thu,fri")
+    logging.debug(f"Updating scheduler with time: {schedule_time}, days: {schedule_days}")
+    try:
+        hour, minute = map(int, schedule_time.split(":"))
+    except ValueError:
+        logging.error("Invalid SCHEDULE_TIME format. Using default 08:00.")
+        hour, minute = 8, 0
+
+    # Remove existing job if it exists
+    try:
+        scheduler.remove_job('main_script_job')
+        logging.debug("Existing job 'main_script_job' removed.")
+    except Exception as e:
+        logging.debug("No existing job to remove.")
+
+    scheduler.add_job(
+        run_main_script,
+        trigger='cron',
+        day_of_week=schedule_days,
+        hour=hour,
+        minute=minute,
+        id='main_script_job',
+        replace_existing=True
+    )
+    logging.info(f"Scheduler updated: main.py will run on {schedule_days} at {schedule_time}.")
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -81,6 +122,10 @@ def index():
             load_dotenv(dotenv_path=config_env_file, override=True)
             load_dotenv(dotenv_path=credentials_env_file, override=True)
             logging.debug("Configuration saved and .env files reloaded.")
+
+            # Update the scheduler with the new schedule settings
+            update_scheduler()
+
             return redirect('/')
 
         elif action == 'run_script':
@@ -122,21 +167,11 @@ def index():
 
     return render_template('index.html', config_data=config_data, credentials_data=credentials_data, num_recipients=num_recipients)
 
-def run_main_script():
-    """Run main.py to pull data, compose messages, and send them."""
-    logging.info(f"Running main.py at {datetime.datetime.now()}")
-    result = subprocess.run(['bin/python', 'main.py'], capture_output=True, text=True)
-    logging.info(f"main.py executed. Return code: {result.returncode}")
-    logging.debug(f"Output from main.py: {result.stdout}")
-    if result.stderr:
-        logging.error(f"Errors from main.py: {result.stderr}")
-
 def init_scheduler():
     """Initialize the scheduler to run main.py based on scheduling settings."""
-    scheduler = BackgroundScheduler()
     schedule_time = os.getenv("SCHEDULE_TIME", "08:00")
     schedule_days = os.getenv("SCHEDULE_DAYS", "mon,tue,wed,thu,fri")
-    logging.debug(f"Scheduling settings - Time: {schedule_time}, Days: {schedule_days}")
+    logging.debug(f"Initializing scheduler with time: {schedule_time}, days: {schedule_days}")
     try:
         hour, minute = map(int, schedule_time.split(":"))
     except ValueError:

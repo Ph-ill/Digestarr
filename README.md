@@ -150,5 +150,3 @@ Digestarr is released under the [MIT License](LICENSE).
 ## Contributing
 
 Contributions are welcome! Feel free to fork the repository and submit pull requests for improvements or bug fixes.
-
-*Note: Git is not required to run Digestarr. You can simply download the source code as a ZIP file from GitHub and follow the installation instructions above.*
