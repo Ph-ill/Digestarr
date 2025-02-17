@@ -37,7 +37,7 @@ radarr_api_key = os.getenv('RADARR_API_KEY')
 telegram_token = os.getenv('TELEGRAM_TOKEN')
 
 # timedeltastore for testing different dates
-timedeltastore = 0
+timedeltastore = 1
 
 # Define the host and API key for Sonarr
 sonarr_configuration = sonarr.Configuration(

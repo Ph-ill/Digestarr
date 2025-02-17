@@ -37,6 +37,24 @@
                 </div>
             </div>
 
+            <!-- New Scheduling Section -->
+            <div class="section">
+                <h2>Scheduling</h2>
+                <label for="SCHEDULE_TIME">Scheduled Time (HH:MM, 24-hour format)</label>
+                <input type="time" id="SCHEDULE_TIME" name="SCHEDULE_TIME" value="{{ config_data.SCHEDULE_TIME }}" required>
+
+                <div class="day-selectors">
+                    <p>Select Days:</p>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="mon" {% if 'mon' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Mon</label>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="tue" {% if 'tue' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Tue</label>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="wed" {% if 'wed' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Wed</label>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="thu" {% if 'thu' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Thu</label>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="fri" {% if 'fri' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Fri</label>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="sat" {% if 'sat' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Sat</label>
+                    <label><input type="checkbox" name="SCHEDULE_DAYS" value="sun" {% if 'sun' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Sun</label>
+                </div>
+            </div>
+
             <div class="section">
                 <h2>Credentials</h2>
                 <label for="SONARR_API_KEY">Sonarr API Key</label>
@@ -63,7 +81,25 @@
                 </div>
             </div>
 
-            <button type="submit">Save</button>
+            <!-- Save Button (For saving .env data) -->
+            <form method="POST">
+                <input type="hidden" name="action" value="save">
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+
+            <!-- Run main.py Button -->
+            <form method="POST">
+                <input type="hidden" name="action" value="run_script">
+                <button type="submit" id="run-script-btn" class="btn btn-primary">Send Test Message</button>
+            </form>
+
+            <div id="modal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <p id="modal-message"></p>
+                </div>
+            </div>
+
         </form>
     </div>
 
@@ -77,6 +113,7 @@
             const recipientFieldsContainer = document.getElementById('recipient-fields-container');
             const whatsappCheckbox = document.getElementById('whatsapp-enabled-checkbox');
             const telegramCheckbox = document.getElementById('telegram-enabled-checkbox');
+            const aiEnabledCheckbox = document.getElementById('ai-enabled-checkbox');
 
             // Pass the existing recipient data from server-side into JavaScript
             const credentialsData = {
@@ -167,7 +204,6 @@
 
             function toggleMistralApiField() {
                 var mistralApiContainer = document.getElementById('mistral-api-container');
-                var aiEnabledCheckbox = document.getElementById('ai-enabled-checkbox');
                 if (aiEnabledCheckbox.checked) {
                     mistralApiContainer.style.display = 'block'; // Show the input field
                 } else {
@@ -181,8 +217,24 @@
             };
 
             // Run whenever the checkbox is changed
-            document.getElementById('ai-enabled-checkbox').addEventListener('change', toggleMistralApiField);
+            aiEnabledCheckbox.addEventListener('change', toggleMistralApiField);
         });
+
+        // Get the modal element
+        const modal = document.getElementById("modal");
+        const modalMessage = document.getElementById("modal-message");
+        const closeModal = document.getElementsByClassName("close")[0];
+
+        // Function to show the modal
+        function showModal(message) {
+            modalMessage.textContent = message;
+            modal.style.display = "block";
+        }
+
+        // Event listener for closing the modal
+        closeModal.onclick = function() {
+            modal.style.display = "none";
+        };
     </script>
 </body>
 </html>

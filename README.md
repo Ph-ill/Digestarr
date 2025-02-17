@@ -34,12 +34,15 @@ python messegarr/main.py
 #### Configurator
 
 - [ ] Test message from configurator
-- [ ] Schedule from configurator
+  - [X] Add button to send test message
+  - [ ] Show confirmation message was sent on page reload
+- [X] Schedule from configurator
 - [ ] Run configurator as background service
 - [X] Add 'AI Features' checkbox
   - [X] Have mistral api key input field display based on status of checkbox
 - [ ] Stop flask logging API Keys in cleartext
 - [X]  Dynamically hide whatsapp and telegram credential fields based on enabled functionality
+- [ ]  Pull telegram Chat with configurator
 
 
 #### General
