@@ -237,5 +237,5 @@ for i in range(num_recipients):
         print(response.text)
     
     if telegram_enabled == True:
-        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={os.getenv(f"TELEGRAM_CHAT_ID_{i+1}")}&text={message_body}"
-        print(requests.get(url).json()) 
+        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={os.getenv(f'TELEGRAM_CHAT_ID_{i+1}')}&text={message_body}&disable_web_page_preview=true"
+        print(requests.get(url).json())

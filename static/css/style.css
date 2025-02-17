@@ -11,8 +11,8 @@ body {
     margin: 20px auto;
     padding: 20px;
     border-radius: 10px;
-    background: linear-gradient(to bottom right, #f0f0f0, #e5e5e5); /* Slight gradient */
-    background-attachment: fixed; /* Parallax effect */
+    background: linear-gradient(to bottom right, #f0f0f0, #e5e5e5);
+    background-attachment: fixed;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -20,17 +20,17 @@ body {
 }
 
 .form-container {
-    background-color: #fff; /* White background for the form container */
+    background-color: #fff;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1); /* Drop shadow */
+    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.1);
     flex-grow: 1;
 }
 
 /* Icon header styles */
 .icon-header {
     text-align: center;
-    margin-bottom: 1px;  /* Reduced gap */
+    margin-bottom: 10px;  /* Reduced gap between icon and title */
 }
 
 .icon-header img {
@@ -39,17 +39,15 @@ body {
     display: inline-block;
 }
 
-
-/* Make each section stand out with a subtle border and background color */
+/* Section styles */
 .section {
     margin-bottom: 30px;
     padding: 20px;
-    background-color: #fafafa; /* Slightly off-white to separate from container */
+    background-color: #fafafa;
     border-radius: 8px;
     border: 1px solid #ddd;
 }
 
-/* Style the section headings to further distinguish each block */
 .section h2 {
     font-size: 22px;
     margin-top: 0;
@@ -79,17 +77,27 @@ label {
     color: #333;
 }
 
+/* Button row styles for side-by-side buttons */
+.button-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0;
+}
+
+.button-row .btn {
+    width: 48%;
+    margin: 0;
+}
+
 button {
     background-color: #ff6600;
     color: white;
-    padding: 20px 50px; /* Larger and wider */
+    padding: 20px 50px;
     border: none;
     border-radius: 12px;
     cursor: pointer;
-    display: block;
-    margin: 30px auto; /* Center the button */
-    width: 70%; /* Wider button */
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 2px;
@@ -113,20 +121,20 @@ input[type="checkbox"] {
     margin-left: 10px;
     width: 20px;
     height: 20px;
-    background-color: #ff6600; /* Orange background */
+    background-color: #ff6600;
     border-radius: 5px;
     cursor: pointer;
-    border: 2px solid #ff6600; /* Match button's border */
-    appearance: none; /* Removes default styling */
-    position: relative; /* To position the custom checkmark */
+    border: 2px solid #ff6600;
+    appearance: none;
+    position: relative;
 }
 
 input[type="checkbox"]:checked {
-    background-color: #e65c00; /* Darker shade of orange */
+    background-color: #e65c00;
 }
 
 input[type="checkbox"]:checked::before {
-    content: '✔'; /* Adds a checkmark */
+    content: '✔';
     color: white;
     font-size: 16px;
     position: absolute;
@@ -162,10 +170,9 @@ input[type="checkbox"]:checked::before {
         rgba(255, 160, 0, 1) 68.2%,
         rgba(255, 183, 0, 1) 86.4%
     );
-    margin-top: 0;       /* Reduced white space above the text */
+    margin-top: 0;
     margin-bottom: 20px;
 }
-
 
 @keyframes move {
     0%, 100% {
@@ -196,14 +203,14 @@ footer a:hover {
 
 /* Modal styles */
 .modal {
-    display: none; /* Hidden by default */
+    display: none;
     position: fixed;
     z-index: 1;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Black background with transparency */
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
 .modal-content {
@@ -214,6 +221,7 @@ footer a:hover {
     width: 50%;
     text-align: center;
     position: relative;
+    border-radius: 10px;
 }
 
 .close {
@@ -228,15 +236,11 @@ footer a:hover {
     color: red;
 }
 
-/* ==================== */
-/* Scheduling Fixes     */
-/* ==================== */
-
-/* 1. Better alignment for day checkboxes */
+/* Scheduling Fixes */
 .day-selectors {
     display: flex;
-    flex-wrap: wrap; /* Allows wrapping if there's not enough horizontal space */
-    gap: 10px;       /* Spacing between each label/checkbox pair */
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .day-selectors label {
@@ -246,11 +250,10 @@ footer a:hover {
 }
 
 .day-selectors input[type="checkbox"] {
-    margin-left: 0;    /* Remove default left margin */
-    margin-right: 5px; /* Small spacing before day name */
+    margin-left: 0;
+    margin-right: 5px;
 }
 
-/* 2. Reduce time input width for scheduling */
 .section input[type="time"] {
     width: auto;
     max-width: 150px;

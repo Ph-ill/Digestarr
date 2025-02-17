@@ -3,17 +3,17 @@
   <h1>Digestarr</h1>
 </div>
 
-**Digestarr** is a Python-based tool that formulates and sends out daily digests about new TV shows and movies sourced from Sonarr and Radarr for your Plex, Jellyfin, or Emby server. Built with a user-friendly web configurator, Digestarr simplifies managing API keys, scheduling updates, and delivering notifications via Telegram and WhatsApp (using [ChatMeBot](https://chatmebot.com)).
+**Digestarr** is a Python-based tool that compiles and sends daily media digests about new TV shows and movies sourced from Sonarr and Radarr for your Plex, Jellyfin, or Emby server. With a user-friendly Flask configurator, Digestarr simplifies managing API keys, scheduling updates, and delivering notifications via Telegram and WhatsApp (using [ChatMeBot](https://chatmebot.com)).
 
 ---
 
 ## Features
 
-- **Daily Media Digest:** Automatically compiles and sends a daily digest of new media content detected by Sonarr and Radarr.
-- **Flexible Scheduling:** Set specific days and times for when the daily digest should be sent.
-- **Multi-Channel Messaging:** Deliver notifications via Telegram and WhatsApp (powered by [ChatMeBot](https://chatmebot.com)).
-- **Web-Based Configurator:** Easily manage your configuration, API keys, and scheduling options through a Flask-powered interface.
-- **Future Enhancements:** Planned features include AI-driven personalized summaries, recommendation engines, and expanded household productivity capabilities.
+- **Daily Media Digest:** Automatically compiles and sends daily digests of new media content.
+- **Flexible Scheduling:** Set specific days and times for sending the digest.
+- **Multi-Channel Messaging:** Receive notifications via Telegram and WhatsApp.
+- **User-Friendly Configurator:** Easily manage configuration, API keys, and scheduling.
+- **Future Enhancements:** Planned features include AI-driven personalized summaries, recommendation engines, and expanded messaging options.
 
 ---
 
@@ -26,11 +26,7 @@
 
 ### Downloading the Code
 
-You have two options to obtain the code:
-
 #### Using Git
-
-Clone the repository with:
 
 ```bash
 git clone https://github.com/yourusername/Digestarr.git
@@ -39,7 +35,6 @@ cd Digestarr
 
 #### Download as ZIP
 
-If you prefer not to use Git, you can download the repository as a ZIP file directly from GitHub:
 1. Navigate to the [Digestarr GitHub repository](https://github.com/yourusername/Digestarr).
 2. Click the green **Code** button.
 3. Select **Download ZIP**.
@@ -67,7 +62,7 @@ If you prefer not to use Git, you can download the repository as a ZIP file dire
       venv\Scripts\activate
       ```
 
-3. **Install the Project Dependencies:**
+3. **Install Dependencies:**
 
     ```bash
     pip install -r requirements.txt
@@ -79,7 +74,7 @@ If you prefer not to use Git, you can download the repository as a ZIP file dire
 
 ### Running the Configurator
 
-Digestarr’s configurator is a Flask-based web interface for setting up your media hosts, API keys, credentials, and scheduling for your daily digest.
+Digestarr’s configurator is a Flask-based web interface that lets you configure media hosts, API keys, credentials, and scheduling.
 
 1. **Start the Configurator:**
 
@@ -89,34 +84,41 @@ Digestarr’s configurator is a Flask-based web interface for setting up your me
 
 2. **Access the Interface:**
 
-    Open your browser and navigate to `http://<SERVER_IP>:5000` (replace `<SERVER_IP>` with your server’s IP address).
+    Open your browser and navigate to `http://<SERVER_IP>:5000` (replace `<SERVER_IP>` with your server's IP address).
 
 3. **Configure Your Settings:**
 
-    - **Media Hosts & Recipients:** Enter your Sonarr and Radarr host addresses and specify the number of recipients.
-    - **Messaging Platforms:** Enable Telegram and/or WhatsApp. (WhatsApp messages are sent using [ChatMeBot](https://chatmebot.com).)
-    - **API Keys:** Enter your API keys for Sonarr, Radarr, Mistral, OMDB, and Telegram.
-    - **Scheduling:** 
-        - Use the time picker to set the scheduled time (e.g., `09:38`) for your daily digest.
-        - Select the days of the week on which the daily digest should be sent.
-    - **Screenshot Preview:**
-
-      ![Configurator Screenshot](configurator.png)
+   - Enter your Sonarr and Radarr host addresses and specify the number of recipients.
+   - Enable Telegram and/or WhatsApp (WhatsApp messages are sent using [ChatMeBot](https://chatmebot.com)).
+   - Provide the necessary API keys (Sonarr, Radarr, Mistral, OMDB, Telegram, etc.).
+   - Set the scheduled time (e.g., `09:38`) and select the days for the digest.
+   - Use the **Send Test Message** button to verify your configuration in real time.
 
 4. **Save Configuration:**
 
-    Click the **Save** button to write your settings to the `.env` files. The scheduler will then use these settings to run `main.py` at the specified times to compile and send your daily digest.
+   Click **Save** to update your `.env` files. The scheduler will then use these settings to run `main.py` at the scheduled times.
 
-### How It Works
+---
 
-- **Scheduling:**  
-  Digestarr uses APScheduler (integrated into the configurator script) to read your scheduling settings (`SCHEDULE_TIME` and `SCHEDULE_DAYS`) from the `.env` file. At the configured time(s), it automatically executes `main.py` to fetch media data, compose your daily digest, and send notifications.
+## Screenshots
 
-- **Messaging:**  
-  The daily digest is delivered via Telegram, and WhatsApp messages are dispatched through ChatMeBot.
+### Configurator Interface
 
-- **Logging:**  
-  Console logs provide insight into scheduler initialization and job execution. Check your terminal output for detailed logs if troubleshooting is needed.
+![Configurator Screenshot](static/images/configurator.png)
+
+### Telegram Message Example
+
+Below is an example Telegram message received from Digestarr:
+
+![Telegram Message](telegram.png)
+
+---
+
+## How It Works
+
+- **Scheduling:** Digestarr uses APScheduler (via the Flask configurator) to read scheduling settings (`SCHEDULE_TIME` and `SCHEDULE_DAYS`) from your `.env` file. At the specified time(s), it executes `main.py` to fetch media data, compose a digest, and send notifications.
+- **Messaging:** Notifications are delivered via Telegram and WhatsApp (using ChatMeBot).
+- **Logging:** Console logs provide insight into scheduler initialization and job execution for troubleshooting.
 
 ---
 
@@ -125,19 +127,19 @@ Digestarr’s configurator is a Flask-based web interface for setting up your me
 ### Current Features
 
 - Web-based configurator for managing API keys, credentials, and scheduling.
-- Scheduled execution of `main.py` to send a daily media digest.
+- Scheduled execution of `main.py` to send daily media digests.
 - Integration with Sonarr, Radarr, Telegram, and ChatMeBot for WhatsApp messaging.
 
 ### Upcoming Improvements
 
-- **Enhanced AI Capabilities:** Personalized summaries and recommendation engines.
-- **Expanded Messaging Platforms:** Additional channels for notifications.
-- **Improved Logging:** More robust logging and error handling.
+- Enhanced AI capabilities: Personalized summaries and recommendation engines.
+- Expanded messaging platforms.
+- More robust logging (console and file).
 
 ### Known Issues
 
 - Occasional timing discrepancies in content updates.
-- Further UI enhancements needed for additional configuration fields.
+- Additional UI enhancements for configuration fields.
 
 ---
 
@@ -150,3 +152,5 @@ Digestarr is released under the [MIT License](LICENSE).
 ## Contributing
 
 Contributions are welcome! Feel free to fork the repository and submit pull requests for improvements or bug fixes.
+
+*Note: Git is not required to run Digestarr—you can also download the source code as a ZIP from GitHub and follow the installation instructions above.*
