@@ -109,7 +109,7 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 ### Telegram Message Example
 
 <div align="center">
-  <img src="readme_images/Telegram.jpg" alt="Telegram Message" width="300">
+  <img src="readme_images/Telegram.jpg" alt="Telegram Message" width="280">
 </div>
 
 ---
