@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Messegarr Config</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Digestarr Config</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/icon.svg') }}">
+    <!-- Using locally hosted CSS and fonts for offline compatibility -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <div class="form-container">
-        <h1 class="header-text">Messegarr Config</h1>
+        <div class="icon-header">
+            <img src="{{ url_for('static', filename='images/icon.svg') }}" alt="Digestarr Icon">
+        </div>
+        <h1 class="header-text" style="text-align: center;">Digestarr Config</h1>
 
         <form method="POST">
             <div class="section">
@@ -99,7 +105,6 @@
                     <p id="modal-message"></p>
                 </div>
             </div>
-
         </form>
     </div>
 
