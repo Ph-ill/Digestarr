@@ -104,13 +104,13 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 
 ### Configurator Interface
 
-![Configurator Screenshot](configurator.png)
+![Configurator Screenshot](readme_images/configurator.png)
 
 ### Telegram Message Example
 
 Below is an example Telegram message received from Digestarr:
 
-![Telegram Message](Telegram.Jpg)
+![Telegram Message](readme_images/Telegram.jpg)
 
 ---
 
