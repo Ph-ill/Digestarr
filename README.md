@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="static/images/icon.svg" alt="Digestarr Icon" width="128" height="128">
+  <img src="static/images/icon.png" alt="Digestarr Icon" width="128" height="128">
   <h1>Digestarr</h1>
 </div>
 
@@ -104,7 +104,7 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 
 ### Configurator Interface
 
-![Configurator Screenshot](static/images/configurator.png)
+![Configurator Screenshot](readme_images/configurator.png)
 
 ### Telegram Message Example
 
