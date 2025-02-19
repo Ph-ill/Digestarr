@@ -1,4 +1,7 @@
 import os
+import sys
+import threading
+import socket
 import logging
 from flask import Flask, render_template, request, jsonify, redirect
 from dotenv import load_dotenv, set_key
@@ -21,17 +24,30 @@ credentials_env_file = Path('credentials.env')
 load_dotenv(dotenv_path=config_env_file)
 load_dotenv(dotenv_path=credentials_env_file)
 
+# Store the initial port as a global constant.
+INITIAL_PORT = int(os.environ.get('DIGESTARR_PORT', '5000'))
+
+def get_local_ip():
+    try:
+        hostname, aliaslist, ipaddrlist = socket.gethostbyname_ex(socket.gethostname())
+        for ip in ipaddrlist:
+            if ip.startswith("192.168."):
+                return ip
+        return ipaddrlist[0] if ipaddrlist else "127.0.0.1"
+    except Exception:
+        return "127.0.0.1"
+
 def save_to_env_file(env_file, data):
-    """ Save updated data to the specified .env file, excluding keys with empty values. """
     updated_lines = []
     for key, value in data.items():
-        if value:
-            updated_lines.append(f"{key}={value}\n")
+        # Write the key even if the value is an empty string.
+        if value is None:
+            continue
+        updated_lines.append(f"{key}={value}\n")
     with open(env_file, 'w') as file:
         file.writelines(updated_lines)
 
 def run_main_script():
-    """Run main.py to pull data, compose messages, and send them."""
     logging.info(f"Running main.py at {datetime.datetime.now()}")
     result = subprocess.run(['bin/python', 'main.py'], capture_output=True, text=True)
     logging.info(f"main.py executed. Return code: {result.returncode}")
@@ -40,9 +56,18 @@ def run_main_script():
         logging.error(f"Errors from main.py: {result.stderr}")
 
 def update_scheduler():
-    """Update (or initialize) the scheduler job based on current .env settings."""
     schedule_time = os.getenv("SCHEDULE_TIME", "08:00")
-    schedule_days = os.getenv("SCHEDULE_DAYS", "mon,tue,wed,thu,fri")
+    # In case there is extra whitespace, strip it
+    schedule_days = os.getenv("SCHEDULE_DAYS", "").strip()
+    if not schedule_days:
+        logging.info("No schedule days selected; scheduler will not run.")
+        try:
+            scheduler.remove_job('main_script_job')
+            logging.debug("Existing job 'main_script_job' removed.")
+        except Exception as e:
+            logging.debug("No existing job to remove.")
+        return
+
     logging.debug(f"Updating scheduler with time: {schedule_time}, days: {schedule_days}")
     try:
         hour, minute = map(int, schedule_time.split(":"))
@@ -50,7 +75,6 @@ def update_scheduler():
         logging.error("Invalid SCHEDULE_TIME format. Using default 08:00.")
         hour, minute = 8, 0
 
-    # Remove existing job if it exists
     try:
         scheduler.remove_job('main_script_job')
         logging.debug("Existing job 'main_script_job' removed.")
@@ -73,59 +97,80 @@ def index():
     if request.method == 'POST':
         action = request.form.get('action')
         if action == 'save':
-            num_recipients = request.form['NUM_RECIPIENTS']
-            num_recipients = int(num_recipients) if num_recipients else 1
+            try:
+                num_recipients = int(request.form.get('NUM_RECIPIENTS', '1'))
+                schedule_time = request.form.get('SCHEDULE_TIME', '08:00')
+                # Trim each day and join only non-empty entries
+                schedule_days_list = [d.strip() for d in request.form.getlist('SCHEDULE_DAYS') if d.strip()]
+                schedule_days_str = ','.join(schedule_days_list)
+                digestarr_ip = request.form.get('DIGESTARR_IP', '127.0.0.1')
+                digestarr_port = request.form.get('DIGESTARR_PORT', '5000')
 
-            # Retrieve scheduling fields
-            schedule_time = request.form.get('SCHEDULE_TIME', '08:00')
-            schedule_days_list = request.form.getlist('SCHEDULE_DAYS')
-            schedule_days_str = ','.join(schedule_days_list)
+                config_values = {
+                    'DIGESTARR_IP': digestarr_ip,
+                    'DIGESTARR_PORT': digestarr_port,
+                    'SONARR_HOST': request.form['SONARR_HOST'],
+                    'RADARR_HOST': request.form['RADARR_HOST'],
+                    'NUM_RECIPIENTS': str(num_recipients),
+                    'WHATSAPP_ENABLED': 'true' if 'WHATSAPP_ENABLED' in request.form else 'false',
+                    'TELEGRAM_ENABLED': 'true' if 'TELEGRAM_ENABLED' in request.form else 'false',
+                    'AI_ENABLED': 'true' if 'AI_ENABLED' in request.form else 'false',
+                    'SCHEDULE_TIME': schedule_time,
+                    'SCHEDULE_DAYS': schedule_days_str
+                }
+                save_to_env_file(config_env_file, config_values)
 
-            # Save config.env values including scheduling settings
-            config_values = {
-                'SONARR_HOST': request.form['SONARR_HOST'],
-                'RADARR_HOST': request.form['RADARR_HOST'],
-                'NUM_RECIPIENTS': str(num_recipients),
-                'WHATSAPP_ENABLED': 'true' if 'WHATSAPP_ENABLED' in request.form else 'false',
-                'TELEGRAM_ENABLED': 'true' if 'TELEGRAM_ENABLED' in request.form else 'false',
-                'AI_ENABLED': 'true' if 'AI_ENABLED' in request.form else 'false',
-                'SCHEDULE_TIME': schedule_time,
-                'SCHEDULE_DAYS': schedule_days_str
-            }
-            save_to_env_file(config_env_file, config_values)
+                credentials_values = {
+                    'SONARR_API_KEY': request.form['SONARR_API_KEY'],
+                    'RADARR_API_KEY': request.form['RADARR_API_KEY'],
+                    'MISTRAL_API_KEY': request.form['MISTRAL_API_KEY'],
+                    'OMDB_API_KEY': request.form['OMDB_API_KEY'],
+                    'TELEGRAM_TOKEN': request.form['TELEGRAM_TOKEN']
+                }
+                for i in range(1, num_recipients + 1):
+                    if request.form.get(f'PHONE_NUMBER_{i}', ''):
+                        credentials_values[f'PHONE_NUMBER_{i}'] = request.form.get(f'PHONE_NUMBER_{i}', '')
+                    if request.form.get(f'PHONE_NUMBER_{i}_API_KEY', ''):
+                        credentials_values[f'PHONE_NUMBER_{i}_API_KEY'] = request.form.get(f'PHONE_NUMBER_{i}_API_KEY', '')
+                    if request.form.get(f'TELEGRAM_CHAT_ID_{i}', ''):
+                        credentials_values[f'TELEGRAM_CHAT_ID_{i}'] = request.form.get(f'TELEGRAM_CHAT_ID_{i}', '')
+                save_to_env_file(credentials_env_file, credentials_values)
 
-            # Save credentials.env values
-            credentials_values = {
-                'SONARR_API_KEY': request.form['SONARR_API_KEY'],
-                'RADARR_API_KEY': request.form['RADARR_API_KEY'],
-                'MISTRAL_API_KEY': request.form['MISTRAL_API_KEY'],
-                'OMDB_API_KEY': request.form['OMDB_API_KEY'],
-                'TELEGRAM_TOKEN': request.form['TELEGRAM_TOKEN']
-            }
-            for i in range(1, num_recipients + 1):
-                phone_number = request.form.get(f'PHONE_NUMBER_{i}', '')
-                phone_number_api_key = request.form.get(f'PHONE_NUMBER_{i}_API_KEY', '')
-                telegram_chat_id = request.form.get(f'TELEGRAM_CHAT_ID_{i}', '')
-                if phone_number:
-                    credentials_values[f'PHONE_NUMBER_{i}'] = phone_number
-                if phone_number_api_key:
-                    credentials_values[f'PHONE_NUMBER_{i}_API_KEY'] = phone_number_api_key
-                if telegram_chat_id:
-                    credentials_values[f'TELEGRAM_CHAT_ID_{i}'] = telegram_chat_id
-            save_to_env_file(credentials_env_file, credentials_values)
+                load_dotenv(dotenv_path=config_env_file, override=True)
+                load_dotenv(dotenv_path=credentials_env_file, override=True)
+                logging.debug("Configuration saved and .env files reloaded.")
 
-            # Reload .env files after saving
-            load_dotenv(dotenv_path=config_env_file, override=True)
-            load_dotenv(dotenv_path=credentials_env_file, override=True)
-            logging.debug("Configuration saved and .env files reloaded.")
+                update_scheduler()
 
-            # Update scheduler with new settings
-            update_scheduler()
-
-            return redirect('/')
+                new_port = int(digestarr_port)
+                if new_port != INITIAL_PORT:
+                    logging.info(f"Port changed from {INITIAL_PORT} to {new_port}. Restarting server...")
+                    def restart_server():
+                        import time
+                        time.sleep(2)
+                        os.environ['DIGESTARR_PORT'] = str(new_port)
+                        os.execv(sys.executable, [sys.executable] + sys.argv)
+                    threading.Thread(target=restart_server).start()
+                    new_url = f"http://{digestarr_ip}:{new_port}"
+                    return f"""
+                    <html>
+                      <head>
+                        <title>Server Restarting</title>
+                      </head>
+                      <body style="font-family: Helvetica, sans-serif; text-align: center; padding: 20px;">
+                        <h2>Configuration Saved</h2>
+                        <p>The Digestarr port has been changed to <strong>{new_port}</strong> and the IP is set to <strong>{digestarr_ip}</strong>.</p>
+                        <p>Please navigate to <a href="{new_url}">{new_url}</a> to access the configurator.</p>
+                      </body>
+                    </html>
+                    """
+                else:
+                    return redirect('/')
+            except Exception as e:
+                logging.error(f"Exception in save branch: {e}")
+                return f"Error: {e}", 500
 
         elif action == 'run_script':
-            # Run main.py and return JSON feedback for test message
             try:
                 result = subprocess.run(['bin/python', 'main.py'], capture_output=True, text=True)
                 status = 'success' if result.returncode == 0 else 'error'
@@ -137,10 +182,11 @@ def index():
                 logging.error(f"Error running main.py: {e}")
             return jsonify({'status': status, 'message': message})
 
-    # Load existing values for the form
     load_dotenv(dotenv_path=config_env_file)
     load_dotenv(dotenv_path=credentials_env_file)
     config_data = {
+        'DIGESTARR_IP': os.getenv('DIGESTARR_IP', '127.0.0.1').strip(),
+        'DIGESTARR_PORT': os.getenv('DIGESTARR_PORT', '5000'),
         'SONARR_HOST': os.getenv('SONARR_HOST', ''),
         'RADARR_HOST': os.getenv('RADARR_HOST', ''),
         'NUM_RECIPIENTS': os.getenv('NUM_RECIPIENTS', '1'),
@@ -148,7 +194,7 @@ def index():
         'TELEGRAM_ENABLED': os.getenv('TELEGRAM_ENABLED', 'false'),
         'AI_ENABLED': os.getenv('AI_ENABLED', 'false'),
         'SCHEDULE_TIME': os.getenv('SCHEDULE_TIME', '08:00'),
-        'SCHEDULE_DAYS': os.getenv('SCHEDULE_DAYS', 'mon,tue,wed,thu,fri')
+        'SCHEDULE_DAYS': os.getenv('SCHEDULE_DAYS', '').strip()
     }
     credentials_data = {
         'SONARR_API_KEY': os.getenv('SONARR_API_KEY', ''),
@@ -165,7 +211,6 @@ def index():
     return render_template('index.html', config_data=config_data, credentials_data=credentials_data, num_recipients=num_recipients)
 
 def init_scheduler():
-    """Initialize the scheduler to run main.py based on scheduling settings."""
     schedule_time = os.getenv("SCHEDULE_TIME", "08:00")
     schedule_days = os.getenv("SCHEDULE_DAYS", "mon,tue,wed,thu,fri")
     logging.debug(f"Initializing scheduler with time: {schedule_time}, days: {schedule_days}")
@@ -174,7 +219,6 @@ def init_scheduler():
     except ValueError:
         logging.error("Invalid SCHEDULE_TIME format. Using default 08:00.")
         hour, minute = 8, 0
-
     scheduler.add_job(
         run_main_script,
         trigger='cron',
@@ -188,7 +232,7 @@ def init_scheduler():
     logging.info(f"Scheduler started: main.py will run on {schedule_days} at {schedule_time}.")
 
 if __name__ == '__main__':
-    port = 5000
+    port = int(os.getenv('DIGESTARR_PORT', '5000'))
     logging.info(f"Server running at http://{os.getenv('LOCAL_IP', '127.0.0.1')}:{port}")
     init_scheduler()
     app.run(host='0.0.0.0', port=port, debug=True, use_reloader=False)

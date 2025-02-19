@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="static/images/icon.svg" alt="Digestarr Icon" width="128" height="128">
+  <img src="static/images/icon.png" alt="Digestarr Icon" width="128" height="128">
   <h1>Digestarr</h1>
 </div>
 

@@ -1,9 +1,8 @@
-
 import os
 import time
 import random
 import requests
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from dotenv import load_dotenv
 
 # Sonarr and Radarr imports
@@ -13,7 +12,7 @@ from sonarr.rest import ApiException as SonarrApiException
 from radarr.rest import ApiException as RadarrApiException
 
 # Utility functions
-from functions import generate_emojis_from_text, add_leading_zero_if_single_digit
+from functions import generate_emojis_from_text, add_leading_zero_if_single_digit, format_air_time
 
 # Debugging
 from pprint import pprint
@@ -36,8 +35,8 @@ sonarr_api_key = os.getenv('SONARR_API_KEY')
 radarr_api_key = os.getenv('RADARR_API_KEY')
 telegram_token = os.getenv('TELEGRAM_TOKEN')
 
-# timedeltastore for testing different dates
-timedeltastore = 1
+# Time delta for testing different dates
+timedeltastore = 0
 
 # Define the host and API key for Sonarr
 sonarr_configuration = sonarr.Configuration(
@@ -53,7 +52,7 @@ radarr_configuration = radarr.Configuration(
 radarr_configuration.api_key['apikey'] = radarr_api_key
 radarr_configuration.api_key['X-Api-Key'] = radarr_api_key
 
-# Time Delta for testing purposes, adjust to day with content on calendar
+# Time Delta for testing purposes, adjust to a day with content on calendar
 today = str(date.today() + timedelta(days=timedeltastore))
 
 # Function to fetch IMDb score using OMDb API
@@ -72,7 +71,7 @@ def fetch_imdb_score(movie_title, is_series=False):
         print(f"Error fetching IMDb rating for {movie_title}: {e}")
         return 'N/A', ''
 
-# Function to parse movie resource for Radarr
+# Function to parse movie resource for Radarr (updated to include air_date_utc)
 def parse_movie_resource(resource_obj):
     parsed_data = {
         'title': resource_obj.title,
@@ -81,9 +80,9 @@ def parse_movie_resource(resource_obj):
         'digital_release': resource_obj.digital_release,
         'monitored': resource_obj.monitored,
         'status': resource_obj.status,
-        'minimum_availability': resource_obj.minimum_availability
+        'minimum_availability': resource_obj.minimum_availability,
+        'air_date_utc': getattr(resource_obj, 'air_date_utc', None)
     }
-
     return parsed_data
 
 # Fetch and parse Radarr data
@@ -91,7 +90,6 @@ with radarr.ApiClient(radarr_configuration) as radarr_api_client:
     radarr_api_instance = radarr.CalendarApi(radarr_api_client)
     start = today + 'T00:00:00'
     end = today + 'T23:59:59'
-
     try:
         radarr_api_response = radarr_api_instance.list_calendar(start=start, end=end)
         parsed_movies = [parse_movie_resource(movie) for movie in radarr_api_response]
@@ -99,29 +97,21 @@ with radarr.ApiClient(radarr_configuration) as radarr_api_client:
         print(f"Exception when calling CalendarApi->list_calendar: {e}\n")
 
 # Get the current time
-current_time = datetime.now()+timedelta(days=timedeltastore)
+current_time = datetime.now() + timedelta(days=timedeltastore)
 
-## Loop through each movie
+## Loop through each movie to check within a 24-hour window (if needed)
 for movie in parsed_movies:
     title = movie['title']
     physical_release = movie['physical_release']
     digital_release = movie['digital_release']
     
-    # Ensure digital_release is not None and is a datetime object
     if digital_release:
-        # Convert digital_release to offset-naive by removing the timezone info (if any)
         digital_release_naive = digital_release.replace(tzinfo=None)
-
-        # Calculate the time window of 24 hours before and after the current time
         time_window_start = current_time - timedelta(hours=24)
         time_window_end = current_time + timedelta(hours=24)
-        
-        # Check if the digital_release is within the 24-hour window
         if time_window_start <= digital_release_naive <= time_window_end:
             imdb_rating, imdb_link = fetch_imdb_score(title)
-            
             imdb_rating_str = f"{imdb_rating}/10" if imdb_rating != 'N/A' else imdb_rating
-
 
 # Function to parse episode resource for Sonarr
 def parse_episode_resource(resource_obj):
@@ -150,7 +140,6 @@ with sonarr.ApiClient(sonarr_configuration) as api_client:
     include_episode_file = False
     include_episode_images = False
     tags = ''
-
     try:
         api_response = api_instance.list_calendar(start=start, end=end, unmonitored=unmonitored, include_series=include_series, include_episode_file=include_episode_file, include_episode_images=include_episode_images, tags=tags)
         parsed_list = [parse_episode_resource(resource) for resource in api_response]
@@ -176,42 +165,38 @@ for parsed_data in parsed_list:
     episode_number = add_leading_zero_if_single_digit(str(parsed_data['episode_number']))
     
     imdb_rating, imdb_link = fetch_imdb_score(series_name, is_series=True)
-    
     imdb_rating_str = f"{imdb_rating}/10" if imdb_rating != 'N/A' else imdb_rating
 
-# Prepare the payload with both Sonarr and Radarr output
 # Function to generate emoji with delay for each title
 def generate_with_delay(text, api_key):
     if ai_enabled:
         emoji_string = generate_emojis_from_text(text, ai_api_key)
-        time.sleep(30)  # Wait 30 seconds to respect the API rate limit
+        time.sleep(30)  # Respect API rate limit
         return emoji_string
     else:
         return ""
 
-# Generate sonarr_messages (generate emojis for episode title and place them after the title)
+# Generate sonarr_messages with air time in 12-hour format:
 sonarr_messages = "\n-\n".join([
     f"{extract_series_name(data['series_id'])} - {data['title']}" +
     (f" {generate_with_delay(data['title'], ai_api_key)}" if ai_enabled else "") + "\n"
+    f"Airing: {format_air_time(data['air_date_utc'])}\n"
     f"S{add_leading_zero_if_single_digit(str(data['season_number']))}E{add_leading_zero_if_single_digit(str(data['episode_number']))}\n"
     f"Rating: {fetch_imdb_score(extract_series_name(data['series_id']), is_series=True)[0]}/10\n"
     f"{fetch_imdb_score(extract_series_name(data['series_id']), is_series=True)[1]}"
     for data in parsed_list
 ])
-
-
-# Check if there are no TV shows and provide a default message
 if not sonarr_messages:
     sonarr_messages = "Sorry no shows today 😔"
 
+# Generate radarr_messages with air time in 12-hour format:
 radarr_messages = "\n-\n".join([
     f"{movie['title']} ({movie['year']}) {generate_with_delay(movie['title'], ai_api_key)}\n"
+    f"Airing: {format_air_time(movie['air_date_utc'])}\n"
     f"Rating: {fetch_imdb_score(movie['title'])[0]}/10\n"
     f"{fetch_imdb_score(movie['title'])[1]}"
     for movie in parsed_movies
 ])
-
-# Check if there are no movies and provide a default message
 if not radarr_messages:
     radarr_messages = "Sorry no movies today 😭"
 
@@ -222,20 +207,12 @@ message_body = f"=^..^= Today's Content =^..^=\n\n📺 TV Shows:\n{sonarr_messag
 print(message_body)
 
 for i in range(num_recipients):
-    if whatsapp_enabled == True:
-        # Your phone number and API key
+    if whatsapp_enabled:
         phone_number = os.getenv(f"PHONE_NUMBER_{i+1}")
         api_key = os.getenv(f"PHONE_NUMBER_{i+1}_API_KEY")
-
-        # Construct the URL
         url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={message_body}&apikey={api_key}"
-
-        # Send the message
         response = requests.get(url)
-
-        # Print the response from CallMeBot
         print(response.text)
-    
-    if telegram_enabled == True:
+    if telegram_enabled:
         url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={os.getenv(f'TELEGRAM_CHAT_ID_{i+1}')}&text={message_body}&disable_web_page_preview=true"
         print(requests.get(url).json())

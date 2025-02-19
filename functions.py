@@ -1,5 +1,8 @@
 import os
 from mistralai import Mistral
+from datetime import timezone
+import datetime
+
 
 # Modified function to ensure leading zeros are only added where applicable
 def add_leading_zero_if_single_digit(s):
@@ -40,3 +43,27 @@ def generate_emojis_from_text(text, api_key, model="mistral-large-latest"):
         return emoji_string
     except Exception as e:
         return f"Error occurred: {e}"
+
+
+def format_air_time(air_date_utc):
+    """
+    Convert a datetime (or ISO string) representing air_date_utc to local time,
+    formatted in 12-hour format with AM/PM.
+    """
+    # If the input is a datetime object:
+    if isinstance(air_date_utc, datetime.datetime):
+        dt = air_date_utc
+    else:
+        # Try to parse the ISO format string:
+        try:
+            dt = datetime.datetime.fromisoformat(air_date_utc)
+        except Exception:
+            return str(air_date_utc)
+    
+    # If datetime is naive, assume it's in UTC:
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    
+    # Convert to local timezone:
+    local_dt = dt.astimezone()
+    return local_dt.strftime('%I:%M %p')
