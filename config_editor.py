@@ -10,21 +10,14 @@ import subprocess
 import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# Configure logging to output to console at DEBUG level.
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
-
 app = Flask(__name__)
-
-# Global scheduler instance
 scheduler = BackgroundScheduler()
 
-# Load .env files
 config_env_file = Path('config.env')
 credentials_env_file = Path('credentials.env')
 load_dotenv(dotenv_path=config_env_file)
 load_dotenv(dotenv_path=credentials_env_file)
-
-# Store the initial port as a global constant.
 INITIAL_PORT = int(os.environ.get('DIGESTARR_PORT', '5000'))
 
 def get_local_ip():
@@ -40,7 +33,6 @@ def get_local_ip():
 def save_to_env_file(env_file, data):
     updated_lines = []
     for key, value in data.items():
-        # Write the key even if the value is an empty string.
         if value is None:
             continue
         updated_lines.append(f"{key}={value}\n")
@@ -57,30 +49,26 @@ def run_main_script():
 
 def update_scheduler():
     schedule_time = os.getenv("SCHEDULE_TIME", "08:00")
-    # In case there is extra whitespace, strip it
     schedule_days = os.getenv("SCHEDULE_DAYS", "").strip()
     if not schedule_days:
         logging.info("No schedule days selected; scheduler will not run.")
         try:
             scheduler.remove_job('main_script_job')
             logging.debug("Existing job 'main_script_job' removed.")
-        except Exception as e:
+        except Exception:
             logging.debug("No existing job to remove.")
         return
-
     logging.debug(f"Updating scheduler with time: {schedule_time}, days: {schedule_days}")
     try:
         hour, minute = map(int, schedule_time.split(":"))
     except ValueError:
         logging.error("Invalid SCHEDULE_TIME format. Using default 08:00.")
         hour, minute = 8, 0
-
     try:
         scheduler.remove_job('main_script_job')
         logging.debug("Existing job 'main_script_job' removed.")
-    except Exception as e:
+    except Exception:
         logging.debug("No existing job to remove.")
-
     scheduler.add_job(
         run_main_script,
         trigger='cron',
@@ -100,12 +88,14 @@ def index():
             try:
                 num_recipients = int(request.form.get('NUM_RECIPIENTS', '1'))
                 schedule_time = request.form.get('SCHEDULE_TIME', '08:00')
-                # Trim each day and join only non-empty entries
                 schedule_days_list = [d.strip() for d in request.form.getlist('SCHEDULE_DAYS') if d.strip()]
                 schedule_days_str = ','.join(schedule_days_list)
                 digestarr_ip = request.form.get('DIGESTARR_IP', '127.0.0.1')
                 digestarr_port = request.form.get('DIGESTARR_PORT', '5000')
-
+                # New weather settings using latitude/longitude:
+                weather_enabled = 'true' if 'WEATHER_ENABLED' in request.form else 'false'
+                weather_latitude = request.form.get('WEATHER_LATITUDE', '')
+                weather_longitude = request.form.get('WEATHER_LONGITUDE', '')
                 config_values = {
                     'DIGESTARR_IP': digestarr_ip,
                     'DIGESTARR_PORT': digestarr_port,
@@ -116,10 +106,12 @@ def index():
                     'TELEGRAM_ENABLED': 'true' if 'TELEGRAM_ENABLED' in request.form else 'false',
                     'AI_ENABLED': 'true' if 'AI_ENABLED' in request.form else 'false',
                     'SCHEDULE_TIME': schedule_time,
-                    'SCHEDULE_DAYS': schedule_days_str
+                    'SCHEDULE_DAYS': schedule_days_str,
+                    'WEATHER_ENABLED': weather_enabled,
+                    'WEATHER_LATITUDE': weather_latitude,
+                    'WEATHER_LONGITUDE': weather_longitude
                 }
                 save_to_env_file(config_env_file, config_values)
-
                 credentials_values = {
                     'SONARR_API_KEY': request.form['SONARR_API_KEY'],
                     'RADARR_API_KEY': request.form['RADARR_API_KEY'],
@@ -135,13 +127,10 @@ def index():
                     if request.form.get(f'TELEGRAM_CHAT_ID_{i}', ''):
                         credentials_values[f'TELEGRAM_CHAT_ID_{i}'] = request.form.get(f'TELEGRAM_CHAT_ID_{i}', '')
                 save_to_env_file(credentials_env_file, credentials_values)
-
                 load_dotenv(dotenv_path=config_env_file, override=True)
                 load_dotenv(dotenv_path=credentials_env_file, override=True)
                 logging.debug("Configuration saved and .env files reloaded.")
-
                 update_scheduler()
-
                 new_port = int(digestarr_port)
                 if new_port != INITIAL_PORT:
                     logging.info(f"Port changed from {INITIAL_PORT} to {new_port}. Restarting server...")
@@ -169,7 +158,6 @@ def index():
             except Exception as e:
                 logging.error(f"Exception in save branch: {e}")
                 return f"Error: {e}", 500
-
         elif action == 'run_script':
             try:
                 result = subprocess.run(['bin/python', 'main.py'], capture_output=True, text=True)
@@ -181,7 +169,6 @@ def index():
                 message = str(e)
                 logging.error(f"Error running main.py: {e}")
             return jsonify({'status': status, 'message': message})
-
     load_dotenv(dotenv_path=config_env_file)
     load_dotenv(dotenv_path=credentials_env_file)
     config_data = {
@@ -194,7 +181,10 @@ def index():
         'TELEGRAM_ENABLED': os.getenv('TELEGRAM_ENABLED', 'false'),
         'AI_ENABLED': os.getenv('AI_ENABLED', 'false'),
         'SCHEDULE_TIME': os.getenv('SCHEDULE_TIME', '08:00'),
-        'SCHEDULE_DAYS': os.getenv('SCHEDULE_DAYS', '').strip()
+        'SCHEDULE_DAYS': os.getenv('SCHEDULE_DAYS', '').strip(),
+        'WEATHER_ENABLED': os.getenv('WEATHER_ENABLED', 'false'),
+        'WEATHER_LATITUDE': os.getenv('WEATHER_LATITUDE', ''),
+        'WEATHER_LONGITUDE': os.getenv('WEATHER_LONGITUDE', '')
     }
     credentials_data = {
         'SONARR_API_KEY': os.getenv('SONARR_API_KEY', ''),
@@ -212,7 +202,10 @@ def index():
 
 def init_scheduler():
     schedule_time = os.getenv("SCHEDULE_TIME", "08:00")
-    schedule_days = os.getenv("SCHEDULE_DAYS", "mon,tue,wed,thu,fri")
+    schedule_days = os.getenv("SCHEDULE_DAYS", "").strip()
+    if not schedule_days:
+        logging.info("No schedule days selected in init_scheduler; scheduler will not run.")
+        return
     logging.debug(f"Initializing scheduler with time: {schedule_time}, days: {schedule_days}")
     try:
         hour, minute = map(int, schedule_time.split(":"))
