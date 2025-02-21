@@ -164,12 +164,12 @@ if weather_enabled and weather_latitude and weather_longitude:
             condition_line = f"{condition} {emoji}"
         else:
             condition_line = condition
-        weather_line = f"{condition_line}\n{temperature_str}\n"
+        weather_line = f"=^..^= Today's Weather =^..^=\n{condition_line}\n{temperature_str}\n"
     else:
         weather_line = condition  # This will be "Weather data unavailable" or an error message.
 
 
-message_body = f"=^..^= Today's Weather =^..^=\n{weather_line}\n=^..^= Today's Content =^..^=\n📺 TV Shows:\n{sonarr_messages}\n\n🎥 Movies:\n{radarr_messages}"
+message_body = f"{weather_line}\n=^..^= Today's Content =^..^=\n📺 TV Shows:\n{sonarr_messages}\n\n🎥 Movies:\n{radarr_messages}"
 
 print(message_body)
 
