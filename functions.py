@@ -1,29 +1,13 @@
 import os
-from mistralai import Mistral
-from datetime import timezone
-import datetime
 import requests
+from datetime import timezone, datetime
 
-# Modified function to ensure leading zeros are only added where applicable
 def add_leading_zero_if_single_digit(s):
     if isinstance(s, str) and s.isdigit() and len(s) == 1:
         return '0' + s
     return s
 
-# Function to generate emojis based on text
 def generate_emojis_from_text(text, api_key, model="mistral-large-latest", num_emojis=3):
-    """
-    Generate a specified number of emojis for the given text using Mistral API.
-
-    Args:
-        text (str): The input text for which emojis need to be generated.
-        api_key (str): Your Mistral API key.
-        model (str): The Mistral model to use (default is "mistral-large-latest").
-        num_emojis (int): Number of emojis to generate (default is 3).
-
-    Returns:
-        str: A string containing the generated emojis or an error message.
-    """
     try:
         from mistralai import Mistral
         client = Mistral(api_key=api_key)
@@ -37,31 +21,18 @@ def generate_emojis_from_text(text, api_key, model="mistral-large-latest", num_e
     except Exception as e:
         return f"Error occurred: {e}"
 
-
 def format_air_time(air_date_utc):
-    """
-    Convert a datetime (or ISO string) representing air_date_utc to local time,
-    formatted in 12-hour format with AM/PM.
-    """
-    # If the input is a datetime object:
-    if isinstance(air_date_utc, datetime.datetime):
+    if isinstance(air_date_utc, datetime):
         dt = air_date_utc
     else:
-        # Try to parse the ISO format string:
         try:
-            dt = datetime.datetime.fromisoformat(air_date_utc)
+            dt = datetime.fromisoformat(air_date_utc)
         except Exception:
             return str(air_date_utc)
-    
-    # If datetime is naive, assume it's in UTC:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
-    
-    # Convert to local timezone:
     local_dt = dt.astimezone()
     return local_dt.strftime('%I:%M %p')
-
-import requests
 
 def get_weather_forecast_by_coords(latitude, longitude):
     """
@@ -69,11 +40,14 @@ def get_weather_forecast_by_coords(latitude, longitude):
     Returns a tuple: (condition, temperature_str)
     """
     url = "https://api.open-meteo.com/v1/forecast"
+    # Read temperature unit from environment; default to 'celsius'
+    temp_unit = os.getenv("WEATHER_TEMP_UNIT", "celsius").lower()
     params = {
         "latitude": latitude,
         "longitude": longitude,
         "daily": "weathercode,temperature_2m_max,temperature_2m_min",
-        "timezone": "auto"
+        "timezone": "auto",
+        "temperature_unit": temp_unit
     }
     try:
         response = requests.get(url, params=params, timeout=5)
@@ -114,7 +88,9 @@ def get_weather_forecast_by_coords(latitude, longitude):
                 99: "Thunderstorm with heavy hail"
             }
             condition = weather_descriptions.get(weather_code, "Unknown")
-            temperature_str = f"High: {temp_max}°C, Low: {temp_min}°C"
+            # Build temperature string with appropriate unit symbol
+            unit_symbol = "°C" if temp_unit == "celsius" else "°F"
+            temperature_str = f"High: {temp_max}{unit_symbol}, Low: {temp_min}{unit_symbol}"
             return condition, temperature_str
         else:
             return "Weather data unavailable", ""

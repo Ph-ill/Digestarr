@@ -92,25 +92,65 @@ def index():
                 schedule_days_str = ','.join(schedule_days_list)
                 digestarr_ip = request.form.get('DIGESTARR_IP', '127.0.0.1')
                 digestarr_port = request.form.get('DIGESTARR_PORT', '5000')
-                # New weather settings using latitude/longitude:
+                
+                # Media Content settings (now in its own section)
+                sonarr_host = request.form.get('SONARR_HOST', '')
+                radarr_host = request.form.get('RADARR_HOST', '')
+                
+                # Module Enablement: new checkboxes from the Modules section
+                media_enabled = 'true' if 'MEDIA_ENABLED' in request.form else 'false'
+                custom_enabled = 'true' if 'CUSTOM_ENABLED' in request.form else 'false'
                 weather_enabled = 'true' if 'WEATHER_ENABLED' in request.form else 'false'
+                
+                # Weather settings
                 weather_latitude = request.form.get('WEATHER_LATITUDE', '')
                 weather_longitude = request.form.get('WEATHER_LONGITUDE', '')
+                weather_temp_unit = request.form.get('WEATHER_TEMP_UNIT', 'celsius').lower()
+                
+                # Custom Day Messages settings:
+                custom_days_list = [d.strip() for d in request.form.getlist('CUSTOM_DAYS') if d.strip()]
+                custom_days_str = ','.join(custom_days_list)
+                mon_message = request.form.get('MON_MESSAGE', '')
+                tue_message = request.form.get('TUE_MESSAGE', '')
+                wed_message = request.form.get('WED_MESSAGE', '')
+                thu_message = request.form.get('THU_MESSAGE', '')
+                fri_message = request.form.get('FRI_MESSAGE', '')
+                sat_message = request.form.get('SAT_MESSAGE', '')
+                sun_message = request.form.get('SUN_MESSAGE', '')
+                
                 config_values = {
                     'DIGESTARR_IP': digestarr_ip,
                     'DIGESTARR_PORT': digestarr_port,
-                    'SONARR_HOST': request.form['SONARR_HOST'],
-                    'RADARR_HOST': request.form['RADARR_HOST'],
+                    # Moved to Media Content Settings:
+                    'SONARR_HOST': sonarr_host,
+                    'RADARR_HOST': radarr_host,
                     'NUM_RECIPIENTS': str(num_recipients),
                     'WHATSAPP_ENABLED': 'true' if 'WHATSAPP_ENABLED' in request.form else 'false',
                     'TELEGRAM_ENABLED': 'true' if 'TELEGRAM_ENABLED' in request.form else 'false',
                     'AI_ENABLED': 'true' if 'AI_ENABLED' in request.form else 'false',
                     'SCHEDULE_TIME': schedule_time,
                     'SCHEDULE_DAYS': schedule_days_str,
-                    'WEATHER_ENABLED': weather_enabled,
+                    # Weather settings
                     'WEATHER_LATITUDE': weather_latitude,
-                    'WEATHER_LONGITUDE': weather_longitude
+                    'WEATHER_LONGITUDE': weather_longitude,
+                    'WEATHER_TEMP_UNIT': weather_temp_unit,
+                    # Custom Day Messages settings
+                    'CUSTOM_DAYS': custom_days_str,
+                    'MON_MESSAGE': mon_message,
+                    'TUE_MESSAGE': tue_message,
+                    'WED_MESSAGE': wed_message,
+                    'THU_MESSAGE': thu_message,
+                    'FRI_MESSAGE': fri_message,
+                    'SAT_MESSAGE': sat_message,
+                    'SUN_MESSAGE': sun_message,
+                    # Module Enablement flags:
+                    'MEDIA_ENABLED': media_enabled,
+                    'CUSTOM_ENABLED': custom_enabled,
+                    'WEATHER_ENABLED': weather_enabled
                 }
+                
+                # Removed warning block—allow saving even if no modules are enabled.
+                
                 save_to_env_file(config_env_file, config_values)
                 credentials_values = {
                     'SONARR_API_KEY': request.form['SONARR_API_KEY'],
@@ -174,6 +214,7 @@ def index():
     config_data = {
         'DIGESTARR_IP': os.getenv('DIGESTARR_IP', '127.0.0.1').strip(),
         'DIGESTARR_PORT': os.getenv('DIGESTARR_PORT', '5000'),
+        # Media settings moved here:
         'SONARR_HOST': os.getenv('SONARR_HOST', ''),
         'RADARR_HOST': os.getenv('RADARR_HOST', ''),
         'NUM_RECIPIENTS': os.getenv('NUM_RECIPIENTS', '1'),
@@ -182,9 +223,21 @@ def index():
         'AI_ENABLED': os.getenv('AI_ENABLED', 'false'),
         'SCHEDULE_TIME': os.getenv('SCHEDULE_TIME', '08:00'),
         'SCHEDULE_DAYS': os.getenv('SCHEDULE_DAYS', '').strip(),
-        'WEATHER_ENABLED': os.getenv('WEATHER_ENABLED', 'false'),
         'WEATHER_LATITUDE': os.getenv('WEATHER_LATITUDE', ''),
-        'WEATHER_LONGITUDE': os.getenv('WEATHER_LONGITUDE', '')
+        'WEATHER_LONGITUDE': os.getenv('WEATHER_LONGITUDE', ''),
+        'WEATHER_TEMP_UNIT': os.getenv('WEATHER_TEMP_UNIT', 'celsius').lower(),
+        'CUSTOM_DAYS': os.getenv('CUSTOM_DAYS', '').strip(),
+        'MON_MESSAGE': os.getenv('MON_MESSAGE', ''),
+        'TUE_MESSAGE': os.getenv('TUE_MESSAGE', ''),
+        'WED_MESSAGE': os.getenv('WED_MESSAGE', ''),
+        'THU_MESSAGE': os.getenv('THU_MESSAGE', ''),
+        'FRI_MESSAGE': os.getenv('FRI_MESSAGE', ''),
+        'SAT_MESSAGE': os.getenv('SAT_MESSAGE', ''),
+        'SUN_MESSAGE': os.getenv('SUN_MESSAGE', ''),
+        # Module Enablement flags:
+        'MEDIA_ENABLED': os.getenv('MEDIA_ENABLED', 'false'),
+        'CUSTOM_ENABLED': os.getenv('CUSTOM_ENABLED', 'false'),
+        'WEATHER_ENABLED': os.getenv('WEATHER_ENABLED', 'false')
     }
     credentials_data = {
         'SONARR_API_KEY': os.getenv('SONARR_API_KEY', ''),

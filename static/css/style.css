@@ -41,8 +41,8 @@ body {
 
 /* Section styles */
 .section {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 20px;
+    padding: 10px;
     background-color: #fafafa;
     border-radius: 8px;
     border: 1px solid #ddd;
@@ -53,7 +53,7 @@ body {
     margin-top: 0;
     margin-bottom: 15px;
     padding-bottom: 5px;
-    border-bottom: 1px solid #ccc;
+    border-bottom: 1px solid #ccc; /* <--- The line is here by default */
     color: #333;
 }
 
@@ -258,4 +258,55 @@ footer a:hover {
     width: auto;
     max-width: 150px;
     display: inline-block;
+}
+
+/* Collapsible Sections */
+.section-header {
+    position: relative;
+    cursor: default; /* Header itself is not clickable */
+}
+
+.collapsible-toggle {
+    all: unset;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    font-size: 16px;
+    color: #777;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    outline: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* Slight padding to enlarge clickable area */
+    padding: 4px;
+    transition: none;
+}
+
+.collapsible-toggle:hover,
+.collapsible-toggle:focus,
+.collapsible-toggle:active {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #777 !important;
+    box-shadow: none !important;
+}
+
+/* Force 180° rotation override (instant) */
+.collapsible-toggle[style*="rotate(-90deg)"] {
+    transform: rotate(180deg) !important;
+}
+
+.section-content {
+    display: block;
+}
+
+/* When the section is collapsed, remove the line and reduce spacing */
+.section.collapsed h2 {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }

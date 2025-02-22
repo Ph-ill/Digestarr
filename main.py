@@ -4,19 +4,18 @@ import random
 import requests
 from datetime import datetime, date, timedelta, timezone
 from dotenv import load_dotenv
-
 import sonarr
 import radarr
 from sonarr.rest import ApiException as SonarrApiException
 from radarr.rest import ApiException as RadarrApiException
-
 from functions import generate_emojis_from_text, add_leading_zero_if_single_digit, format_air_time, get_weather_forecast_by_coords
-
 from pprint import pprint
+import re
 
 load_dotenv(dotenv_path='config.env', override=True)
 load_dotenv(dotenv_path='credentials.env', override=True)
 
+# Retrieve settings and module enable flags
 sonarr_host = os.getenv('SONARR_HOST')
 radarr_host = os.getenv('RADARR_HOST')
 num_recipients = int(os.getenv('NUM_RECIPIENTS'))
@@ -30,8 +29,12 @@ sonarr_api_key = os.getenv('SONARR_API_KEY')
 radarr_api_key = os.getenv('RADARR_API_KEY')
 telegram_token = os.getenv('TELEGRAM_TOKEN')
 
-# Weather module settings using lat/lon
-weather_enabled = os.getenv('WEATHER_ENABLED', 'false').lower() == 'true'
+# Module enable flags
+media_enabled = os.getenv('MEDIA_ENABLED', 'false').lower() == 'true'
+custom_enabled = os.getenv('CUSTOM_ENABLED', 'false').lower() == 'true'
+weather_module_enabled = os.getenv('WEATHER_ENABLED', 'false').lower() == 'true'
+
+# Weather settings
 weather_latitude = os.getenv('WEATHER_LATITUDE', '')
 weather_longitude = os.getenv('WEATHER_LONGITUDE', '')
 
@@ -46,6 +49,11 @@ radarr_configuration.api_key['apikey'] = radarr_api_key
 radarr_configuration.api_key['X-Api-Key'] = radarr_api_key
 
 today = str(date.today() + timedelta(days=timedeltastore))
+
+def escape_markdown_v2(text):
+    # Characters that need to be escaped in MarkdownV2
+    escape_chars = r'_*\[\]()~`>#+\-=|{}.!'
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
 def fetch_imdb_score(movie_title, is_series=False):
     try:
@@ -153,33 +161,99 @@ radarr_messages = "\n-\n".join([
 if not radarr_messages:
     radarr_messages = "Sorry no movies today 😭"
 
-# If weather is enabled and both latitude and longitude are provided, get the forecast.
-weather_line = ""
-if weather_enabled and weather_latitude and weather_longitude:
+# Process weather forecast (if Weather module is enabled)
+if weather_module_enabled and weather_latitude and weather_longitude:
     condition, temperature_str = get_weather_forecast_by_coords(weather_latitude, weather_longitude)
     if condition not in ["Weather data unavailable", "Weather data error"]:
         if ai_enabled:
-            # Generate a single emoji based solely on the condition text.
             emoji = generate_emojis_from_text(condition, ai_api_key, num_emojis=1)
             condition_line = f"{condition} {emoji}"
         else:
             condition_line = condition
-        weather_line = f"=^..^= Today's Weather =^..^=\n{condition_line}\n{temperature_str}\n"
+        weather_text_telegram = f"*__Today's Weather__*\n{escape_markdown_v2(condition_line)}\n{escape_markdown_v2(temperature_str)}"
+        weather_text_whatsapp = f"_*Today's Weather*_\n{condition_line}\n{temperature_str}"
     else:
-        weather_line = condition  # This will be "Weather data unavailable" or an error message.
+        weather_text_telegram = condition
+        weather_text_whatsapp = condition
+else:
+    weather_text_telegram = ""
+    weather_text_whatsapp = ""
 
+# Process custom day message (if Custom module is enabled)
+today_abbr = datetime.now().strftime("%a").lower()
+custom_message = ""
+if today_abbr == "mon":
+    custom_message = os.getenv("MON_MESSAGE", "")
+elif today_abbr == "tue":
+    custom_message = os.getenv("TUE_MESSAGE", "")
+elif today_abbr == "wed":
+    custom_message = os.getenv("WED_MESSAGE", "")
+elif today_abbr == "thu":
+    custom_message = os.getenv("THU_MESSAGE", "")
+elif today_abbr == "fri":
+    custom_message = os.getenv("FRI_MESSAGE", "")
+elif today_abbr == "sat":
+    custom_message = os.getenv("SAT_MESSAGE", "")
+elif today_abbr == "sun":
+    custom_message = os.getenv("SUN_MESSAGE", "")
 
-message_body = f"{weather_line}\n=^..^= Today's Content =^..^=\n📺 TV Shows:\n{sonarr_messages}\n\n🎥 Movies:\n{radarr_messages}"
+if custom_message:
+    custom_text_telegram = f"*__MOTD__*\n{escape_markdown_v2(custom_message)}"
+    custom_text_whatsapp = f"_*MOTD*_\n{custom_message}"
+else:
+    custom_text_telegram = ""
+    custom_text_whatsapp = ""
 
-print(message_body)
+# Build media content message (if Media module is enabled)
+if sonarr_messages.strip() or radarr_messages.strip():
+    media_text_telegram = f"*__Today's Content__*\n📺 *TV Shows:*\n{escape_markdown_v2(sonarr_messages)}\n\n🎥 *Movies:*\n{escape_markdown_v2(radarr_messages)}"
+    media_text_whatsapp = f"_*Today's Content*_\n📺 *TV Shows:*\n{sonarr_messages}\n\n🎥 *Movies:*\n{radarr_messages}"
+else:
+    media_text_telegram = ""
+    media_text_whatsapp = ""
+
+# Compose final message based on enabled modules
+parts_telegram = []
+parts_whatsapp = []
+
+if custom_enabled and custom_text_telegram:
+    parts_telegram.append(custom_text_telegram)
+    parts_whatsapp.append(custom_text_whatsapp)
+if weather_module_enabled and weather_text_telegram:
+    parts_telegram.append(weather_text_telegram)
+    parts_whatsapp.append(weather_text_whatsapp)
+if media_enabled and media_text_telegram:
+    parts_telegram.append(media_text_telegram)
+    parts_whatsapp.append(media_text_whatsapp)
+
+if not parts_telegram:
+    print("No modules enabled or no content available; no message will be sent.")
+    exit(0)
+
+message_body_telegram = "\n\n".join(parts_telegram)
+message_body_whatsapp = "\n\n".join(parts_whatsapp)
+
+print("Telegram Message:\n", message_body_telegram)
+print("WhatsApp Message:\n", message_body_whatsapp)
 
 for i in range(num_recipients):
     if whatsapp_enabled:
         phone_number = os.getenv(f"PHONE_NUMBER_{i+1}")
         api_key = os.getenv(f"PHONE_NUMBER_{i+1}_API_KEY")
-        url = f"https://api.callmebot.com/whatsapp.php?phone={phone_number}&text={message_body}&apikey={api_key}"
-        response = requests.get(url)
-        print(response.text)
+        params = {
+            "phone": phone_number,
+            "text": message_body_whatsapp,
+            "apikey": api_key
+        }
+        response = requests.get("https://api.callmebot.com/whatsapp.php", params=params)
+        print("WhatsApp response:", response.text)
     if telegram_enabled:
-        url = f"https://api.telegram.org/bot{telegram_token}/sendMessage?chat_id={os.getenv(f'TELEGRAM_CHAT_ID_{i+1}')}&text={message_body}&disable_web_page_preview=true"
-        print(requests.get(url).json())
+        chat_id = os.getenv(f"TELEGRAM_CHAT_ID_{i+1}")
+        params = {
+            "chat_id": chat_id,
+            "text": message_body_telegram,
+            "disable_web_page_preview": "true",
+            "parse_mode": "MarkdownV2"
+        }
+        response = requests.get(f"https://api.telegram.org/bot{telegram_token}/sendMessage", params=params)
+        print("Telegram response:", response.json())

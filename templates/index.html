@@ -16,83 +16,190 @@
     </div>
     <h1 class="header-text">Digestarr Config</h1>
     <form method="POST">
+      <!-- General Config Section -->
       <div class="section">
-        <h2>Config</h2>
-        <!-- Digestarr network settings -->
-        <label for="DIGESTARR_IP">Digestarr IP</label>
-        <input type="text" name="DIGESTARR_IP" value="{{ config_data.DIGESTARR_IP }}" placeholder="Enter the IP for Digestarr" required>
-        <label for="DIGESTARR_PORT">Digestarr Port</label>
-        <input type="number" name="DIGESTARR_PORT" value="{{ config_data.DIGESTARR_PORT }}" placeholder="Enter the port for Digestarr" required>
-        <label for="SONARR_HOST">Sonarr Host</label>
-        <input type="text" name="SONARR_HOST" value="{{ config_data.SONARR_HOST }}" placeholder="Enter the Sonarr Host address">
-        <label for="RADARR_HOST">Radarr Host</label>
-        <input type="text" name="RADARR_HOST" value="{{ config_data.RADARR_HOST }}" placeholder="Enter the Radarr Host address">
-        <label for="NUM_RECIPIENTS">Number of Recipients</label>
-        <input type="number" id="NUM_RECIPIENTS" name="NUM_RECIPIENTS" value="{{ config_data.NUM_RECIPIENTS }}" min="0" max="99" required>
-        <div class="checkbox-container">
-          <label for="WHATSAPP_ENABLED">WhatsApp Enabled</label>
-          <input type="checkbox" id="whatsapp-enabled-checkbox" name="WHATSAPP_ENABLED" {% if config_data.WHATSAPP_ENABLED == 'true' %}checked{% endif %}>
+        <div class="section-header">
+          <h2>General</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
         </div>
-        <div class="checkbox-container">
-          <label for="TELEGRAM_ENABLED">Telegram Enabled</label>
-          <input type="checkbox" id="telegram-enabled-checkbox" name="TELEGRAM_ENABLED" {% if config_data.TELEGRAM_ENABLED == 'true' %}checked{% endif %}>
-        </div>
-        <div class="checkbox-container">
-          <label for="AI_ENABLED">AI Features Enabled</label>
-          <input type="checkbox" id="ai-enabled-checkbox" name="AI_ENABLED" {% if config_data.AI_ENABLED == 'true' %}checked{% endif %}>
+        <div class="section-content">
+          <!-- Digestarr network settings -->
+          <label for="DIGESTARR_IP">Digestarr IP</label>
+          <input type="text" name="DIGESTARR_IP" value="{{ config_data.DIGESTARR_IP }}" placeholder="Enter the IP for Digestarr" required>
+          <label for="DIGESTARR_PORT">Digestarr Port</label>
+          <input type="number" name="DIGESTARR_PORT" value="{{ config_data.DIGESTARR_PORT }}" placeholder="Enter the port for Digestarr" required>
+          <label for="NUM_RECIPIENTS">Number of Recipients</label>
+          <input type="number" id="NUM_RECIPIENTS" name="NUM_RECIPIENTS" value="{{ config_data.NUM_RECIPIENTS }}" min="0" max="99" required>
+          <!-- Mistral API Key field -->
+          <div id="mistral-api-container">
+            <label for="MISTRAL_API_KEY">Mistral API Key</label>
+            <input type="password" name="MISTRAL_API_KEY" value="{{ credentials_data.MISTRAL_API_KEY }}" placeholder="Enter your Mistral AI API key">
+          </div>
+          <!-- Enabled checkboxes -->
+          <div class="checkbox-container">
+            <label for="WHATSAPP_ENABLED">WhatsApp Enabled</label>
+            <input type="checkbox" id="whatsapp-enabled-checkbox" name="WHATSAPP_ENABLED" {% if config_data.WHATSAPP_ENABLED == 'true' %}checked{% endif %}>
+          </div>
+          <div class="checkbox-container">
+            <label for="TELEGRAM_ENABLED">Telegram Enabled</label>
+            <input type="checkbox" id="telegram-enabled-checkbox" name="TELEGRAM_ENABLED" {% if config_data.TELEGRAM_ENABLED == 'true' %}checked{% endif %}>
+          </div>
+          <div class="checkbox-container">
+            <label for="AI_ENABLED">AI Features Enabled</label>
+            <!-- Force the AI checkbox to be checked on page load -->
+            <input type="checkbox" id="ai-enabled-checkbox" name="AI_ENABLED" checked>
+          </div>
+          <!-- Telegram Token moved here -->
+          <div id="telegram-token-container">
+            <label for="TELEGRAM_TOKEN">Telegram Token</label>
+            <input type="password" id="telegram-token-field" name="TELEGRAM_TOKEN" value="{{ credentials_data.TELEGRAM_TOKEN }}" placeholder="Enter your Telegram bot Token">
+          </div>
+          <!-- Dynamically generated recipient fields now appear here -->
+          <div id="recipient-fields-container">
+            <!-- JS will insert recipient fields below these checkboxes -->
+          </div>
         </div>
       </div>
-      <!-- Weather Section -->
+      
+      <!-- Scheduling Section (now second) -->
       <div class="section">
-        <div class="weather-section">
-          <div class="checkbox-container">
-            <label for="WEATHER_ENABLED">Weather Module Enabled</label>
-            <input type="checkbox" id="weather-enabled-checkbox" name="WEATHER_ENABLED" {% if config_data.WEATHER_ENABLED == 'true' %}checked{% endif %}>
+        <div class="section-header">
+          <h2>Scheduling</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
+          <label for="SCHEDULE_TIME">Scheduled Time (HH:MM, 24-hour format)</label>
+          <input type="time" id="SCHEDULE_TIME" name="SCHEDULE_TIME" value="{{ config_data.SCHEDULE_TIME }}" required>
+          <div class="day-selectors">
+            <p>Select Days:</p>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="mon" {% if 'mon' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Mon</label>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="tue" {% if 'tue' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Tue</label>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="wed" {% if 'wed' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Wed</label>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="thu" {% if 'thu' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Thu</label>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="fri" {% if 'fri' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Fri</label>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="sat" {% if 'sat' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Sat</label>
+            <label><input type="checkbox" name="SCHEDULE_DAYS" value="sun" {% if 'sun' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Sun</label>
           </div>
+        </div>
+      </div>
+      
+      <!-- Module Enablement Section (now third) -->
+      <div class="section">
+        <div class="section-header">
+          <h2>Digest Modules</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
+          <div class="checkbox-container">
+            <label for="MEDIA_ENABLED">Sonarr/Radarr Scheduled Content</label>
+            <input type="checkbox" id="media-enabled-checkbox" name="MEDIA_ENABLED" {% if config_data.MEDIA_ENABLED == 'true' %}checked{% endif %}>
+          </div>
+          <div class="checkbox-container">
+            <label for="CUSTOM_ENABLED">Message of the Day</label>
+            <input type="checkbox" id="custom-enabled-checkbox" name="CUSTOM_ENABLED" {% if config_data.CUSTOM_ENABLED == 'true' %}checked{% endif %}>
+          </div>
+          <div class="checkbox-container">
+            <label for="WEATHER_ENABLED">Weather</label>
+            <input type="checkbox" id="module-weather-enabled-checkbox" name="WEATHER_ENABLED" {% if config_data.WEATHER_ENABLED == 'true' %}checked{% endif %}>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Media Content Settings Section (now includes API Keys) -->
+      <div class="section" id="media-content-section">
+        <div class="section-header">
+          <h2>Sonarr/Radarr Scheduled Content</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
+          <label for="SONARR_HOST">Sonarr Host</label>
+          <input type="text" name="SONARR_HOST" value="{{ config_data.SONARR_HOST }}" placeholder="Enter the Sonarr Host address">
+          <label for="RADARR_HOST">Radarr Host</label>
+          <input type="text" name="RADARR_HOST" value="{{ config_data.RADARR_HOST }}" placeholder="Enter the Radarr Host address">
+          <!-- API Keys moved here -->
+          <label for="SONARR_API_KEY">Sonarr API Key</label>
+          <input type="password" name="SONARR_API_KEY" value="{{ credentials_data.SONARR_API_KEY }}" placeholder="Enter your Sonarr API key">
+          <label for="RADARR_API_KEY">Radarr API Key</label>
+          <input type="password" name="RADARR_API_KEY" value="{{ credentials_data.RADARR_API_KEY }}" placeholder="Enter your Radarr API key">
+          <label for="OMDB_API_KEY">OMDB API Key</label>
+          <input type="password" name="OMDB_API_KEY" value="{{ credentials_data.OMDB_API_KEY }}" placeholder="Enter your OMDB API key">
+        </div>
+      </div>
+      
+      <!-- Weather Settings Section -->
+      <div class="section" id="weather-section">
+        <div class="section-header">
+          <h2>Weather Settings</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
           <label for="WEATHER_LATITUDE">Weather Latitude</label>
           <input type="text" name="WEATHER_LATITUDE" value="{{ config_data.WEATHER_LATITUDE }}" placeholder="e.g., 30.2672" required>
           <label for="WEATHER_LONGITUDE">Weather Longitude</label>
           <input type="text" name="WEATHER_LONGITUDE" value="{{ config_data.WEATHER_LONGITUDE }}" placeholder="e.g., -97.7431" required>
           <p class="hint">Find your coordinates at <a href="https://www.latlong.net/" target="_blank">latlong.net</a></p>
+          <label for="WEATHER_TEMP_UNIT">Temperature Unit</label>
+          <select name="WEATHER_TEMP_UNIT" id="weather-temp-unit">
+            <option value="celsius" {% if config_data.WEATHER_TEMP_UNIT == 'celsius' %}selected{% endif %}>Celsius</option>
+            <option value="fahrenheit" {% if config_data.WEATHER_TEMP_UNIT == 'fahrenheit' %}selected{% endif %}>Fahrenheit</option>
+          </select>
         </div>
       </div>
-      <!-- Scheduling Section -->
-      <div class="section">
-        <h2>Scheduling</h2>
-        <label for="SCHEDULE_TIME">Scheduled Time (HH:MM, 24-hour format)</label>
-        <input type="time" id="SCHEDULE_TIME" name="SCHEDULE_TIME" value="{{ config_data.SCHEDULE_TIME }}" required>
-        <div class="day-selectors">
-          <p>Select Days:</p>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="mon" {% if 'mon' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Mon</label>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="tue" {% if 'tue' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Tue</label>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="wed" {% if 'wed' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Wed</label>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="thu" {% if 'thu' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Thu</label>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="fri" {% if 'fri' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Fri</label>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="sat" {% if 'sat' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Sat</label>
-          <label><input type="checkbox" name="SCHEDULE_DAYS" value="sun" {% if 'sun' in config_data.SCHEDULE_DAYS|lower %}checked{% endif %}> Sun</label>
+      
+      <!-- Custom Day Messages Section -->
+      <div class="section" id="custom-messages-section">
+        <div class="section-header">
+          <h2>Message of the Day</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
+          <p>Select days to set a custom message:</p>
+          <br>
+          <div class="day-selectors">
+            <div class="custom-day-checkboxes">
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="mon" id="custom-mon-checkbox" {% if config_data.CUSTOM_DAYS and 'mon' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Mon</label>
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="tue" id="custom-tue-checkbox" {% if config_data.CUSTOM_DAYS and 'tue' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Tue</label>
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="wed" id="custom-wed-checkbox" {% if config_data.CUSTOM_DAYS and 'wed' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Wed</label>
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="thu" id="custom-thu-checkbox" {% if config_data.CUSTOM_DAYS and 'thu' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Thu</label>
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="fri" id="custom-fri-checkbox" {% if config_data.CUSTOM_DAYS and 'fri' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Fri</label>
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="sat" id="custom-sat-checkbox" {% if config_data.CUSTOM_DAYS and 'sat' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Sat</label>
+              <label><input type="checkbox" name="CUSTOM_DAYS" value="sun" id="custom-sun-checkbox" {% if config_data.CUSTOM_DAYS and 'sun' in config_data.CUSTOM_DAYS|lower %}checked{% endif %}> Sun</label>
+            </div>
+          </div>
+          <br>
+          <div class="custom-day-messages">
+            <div id="custom-mon-message" style="display: none;">
+              <label for="MON_MESSAGE">Monday Message:</label>
+              <input type="text" name="MON_MESSAGE" value="{{ config_data.MON_MESSAGE or '' }}" placeholder="Enter Monday's custom message">
+            </div>
+            <div id="custom-tue-message" style="display: none;">
+              <label for="TUE_MESSAGE">Tuesday Message:</label>
+              <input type="text" name="TUE_MESSAGE" value="{{ config_data.TUE_MESSAGE or '' }}" placeholder="Enter Tuesday's custom message">
+            </div>
+            <div id="custom-wed-message" style="display: none;">
+              <label for="WED_MESSAGE">Wednesday Message:</label>
+              <input type="text" name="WED_MESSAGE" value="{{ config_data.WED_MESSAGE or '' }}" placeholder="Enter Wednesday's custom message">
+            </div>
+            <div id="custom-thu-message" style="display: none;">
+              <label for="THU_MESSAGE">Thursday Message:</label>
+              <input type="text" name="THU_MESSAGE" value="{{ config_data.THU_MESSAGE or '' }}" placeholder="Enter Thursday's custom message">
+            </div>
+            <div id="custom-fri-message" style="display: none;">
+              <label for="FRI_MESSAGE">Friday Message:</label>
+              <input type="text" name="FRI_MESSAGE" value="{{ config_data.FRI_MESSAGE or '' }}" placeholder="Enter Friday's custom message">
+            </div>
+            <div id="custom-sat-message" style="display: none;">
+              <label for="SAT_MESSAGE">Saturday Message:</label>
+              <input type="text" name="SAT_MESSAGE" value="{{ config_data.SAT_MESSAGE or '' }}" placeholder="Enter Saturday's custom message">
+            </div>
+            <div id="custom-sun-message" style="display: none;">
+              <label for="SUN_MESSAGE">Sunday Message:</label>
+              <input type="text" name="SUN_MESSAGE" value="{{ config_data.SUN_MESSAGE or '' }}" placeholder="Enter Sunday's custom message">
+            </div>
+          </div>
         </div>
       </div>
-      <!-- Credentials Section -->
-      <div class="section">
-        <h2>Credentials</h2>
-        <label for="SONARR_API_KEY">Sonarr API Key</label>
-        <input type="password" name="SONARR_API_KEY" value="{{ credentials_data.SONARR_API_KEY }}" placeholder="Enter your Sonarr API key">
-        <label for="RADARR_API_KEY">Radarr API Key</label>
-        <input type="password" name="RADARR_API_KEY" value="{{ credentials_data.RADARR_API_KEY }}" placeholder="Enter your Radarr API key">
-        <div id="mistral-api-container">
-          <label for="MISTRAL_API_KEY">Mistral API Key</label>
-          <input type="password" name="MISTRAL_API_KEY" value="{{ credentials_data.MISTRAL_API_KEY }}" placeholder="Enter your Mistral AI API key">
-        </div>
-        <label for="OMDB_API_KEY">OMDB API Key</label>
-        <input type="password" name="OMDB_API_KEY" value="{{ credentials_data.OMDB_API_KEY }}" placeholder="Enter your OMDB API key">
-        <div id="telegram-token-container">
-          <label for="TELEGRAM_TOKEN">Telegram Token</label>
-          <input type="password" id="telegram-token-field" name="TELEGRAM_TOKEN" value="{{ credentials_data.TELEGRAM_TOKEN }}" placeholder="Enter your Telegram bot Token">
-        </div>
-        <div id="recipient-fields-container">
-          <!-- Dynamic recipient fields will be inserted here -->
-        </div>
-      </div>
+      
       <!-- Button Row -->
       <div class="button-row">
         <button type="submit" name="action" value="save" class="btn btn-primary">Save</button>
@@ -103,6 +210,8 @@
   <footer>
     <p>MIT Licensed. Developed by <a href="https://github.com/Ph-ill" target="_blank"><strong>Ph-ill</strong></a></p>
   </footer>
+  
+  <!-- Existing Script for dynamic fields and testing -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const numRecipientsInput = document.getElementById('NUM_RECIPIENTS');
@@ -110,6 +219,11 @@
       const whatsappCheckbox = document.getElementById('whatsapp-enabled-checkbox');
       const telegramCheckbox = document.getElementById('telegram-enabled-checkbox');
       const aiEnabledCheckbox = document.getElementById('ai-enabled-checkbox');
+      
+      // Module Enablement checkboxes
+      const mediaEnabledCheckbox = document.getElementById('media-enabled-checkbox');
+      const customEnabledCheckbox = document.getElementById('custom-enabled-checkbox');
+      const moduleWeatherEnabledCheckbox = document.getElementById('module-weather-enabled-checkbox');
       
       const credentialsData = {
         {% for i in range(1, num_recipients + 1) %}
@@ -187,10 +301,45 @@
         }
       }
       
-      window.onload = function() {
-        toggleMistralApiField();
-      };
       aiEnabledCheckbox.addEventListener('change', toggleMistralApiField);
+      // Call on load to set initial state
+      toggleMistralApiField();
+      
+      // Show/hide module-specific sections based on Module Enablement checkboxes
+      function toggleModuleSections() {
+        const mediaSection = document.getElementById('media-content-section');
+        const customSection = document.getElementById('custom-messages-section');
+        const weatherSection = document.getElementById('weather-section');
+        mediaSection.style.display = mediaEnabledCheckbox.checked ? 'block' : 'none';
+        customSection.style.display = customEnabledCheckbox.checked ? 'block' : 'none';
+        weatherSection.style.display = moduleWeatherEnabledCheckbox.checked ? 'block' : 'none';
+      }
+      
+      mediaEnabledCheckbox.addEventListener('change', toggleModuleSections);
+      customEnabledCheckbox.addEventListener('change', toggleModuleSections);
+      moduleWeatherEnabledCheckbox.addEventListener('change', toggleModuleSections);
+      toggleModuleSections();
+      
+      function updateCustomDayMessages() {
+        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+        days.forEach(day => {
+          const checkbox = document.getElementById('custom-' + day + '-checkbox');
+          const messageDiv = document.getElementById('custom-' + day + '-message');
+          if (checkbox && messageDiv) {
+            messageDiv.style.display = checkbox.checked ? 'block' : 'none';
+          }
+        });
+      }
+      
+      ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach(day => {
+        const checkbox = document.getElementById('custom-' + day + '-checkbox');
+        if (checkbox) {
+          checkbox.addEventListener('change', updateCustomDayMessages);
+        }
+      });
+      
+      // Call updateCustomDayMessages on load so pre-checked days show their fields
+      updateCustomDayMessages();
       
       const testMsgBtn = document.getElementById('run-script-btn');
       testMsgBtn.addEventListener('click', function(event) {
@@ -236,5 +385,34 @@
       modal.style.display = "none";
     };
   </script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const toggleButtons = document.querySelectorAll('.collapsible-toggle');
+      toggleButtons.forEach(button => {
+        // Initialize state
+        button.dataset.collapsed = "false";
+        button.addEventListener('click', function() {
+          const sectionContent = this.parentElement.nextElementSibling;
+          const parentSection = this.parentElement.parentElement; // The .section div
+    
+          if (this.dataset.collapsed === "false") {
+            // Collapse
+            sectionContent.style.display = 'none';
+            this.style.transform = 'rotate(180deg)';
+            this.dataset.collapsed = "true";
+            parentSection.classList.add('collapsed');
+          } else {
+            // Expand
+            sectionContent.style.display = 'block';
+            this.style.transform = 'rotate(0deg)';
+            this.dataset.collapsed = "false";
+            parentSection.classList.remove('collapsed');
+          }
+        });
+      });
+    });
+    </script>
+    
 </body>
 </html>
