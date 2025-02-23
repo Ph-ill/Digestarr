@@ -1,5 +1,3 @@
-Below is your updated README.md with the current existing features (as determined by the code) and a note about the planned third‑party modules feature.
-
 ---
 
 <div align="center">
@@ -218,4 +216,3 @@ Contributions are welcome! Feel free to fork the repository and submit pull requ
 
 ---
 
-This updated README reflects the current features and outlines your plan to allow user-created third‑party modules for daily digests. Let me know if you need any further modifications!
