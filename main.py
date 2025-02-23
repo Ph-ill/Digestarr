@@ -33,10 +33,18 @@ telegram_token = os.getenv('TELEGRAM_TOKEN')
 media_enabled = os.getenv('MEDIA_ENABLED', 'false').lower() == 'true'
 custom_enabled = os.getenv('CUSTOM_ENABLED', 'false').lower() == 'true'
 weather_module_enabled = os.getenv('WEATHER_ENABLED', 'false').lower() == 'true'
+news_enabled = os.getenv('NEWS_ENABLED', 'false').lower() == 'true'
 
 # Weather settings
 weather_latitude = os.getenv('WEATHER_LATITUDE', '')
 weather_longitude = os.getenv('WEATHER_LONGITUDE', '')
+
+# News module settings – three categories and country
+news_category_1 = os.getenv('NEWS_CATEGORY_1', 'none')
+news_category_2 = os.getenv('NEWS_CATEGORY_2', 'none')
+news_category_3 = os.getenv('NEWS_CATEGORY_3', 'none')
+news_categories = [news_category_1, news_category_2, news_category_3]
+news_country = os.getenv('NEWS_COUNTRY', 'us')
 
 timedeltastore = 0
 
@@ -51,7 +59,6 @@ radarr_configuration.api_key['X-Api-Key'] = radarr_api_key
 today = str(date.today() + timedelta(days=timedeltastore))
 
 def escape_markdown_v2(text):
-    # Characters that need to be escaped in MarkdownV2
     escape_chars = r'_*\[\]()~`>#+\-=|{}.!'
     return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
 
@@ -161,50 +168,55 @@ radarr_messages = "\n-\n".join([
 if not radarr_messages:
     radarr_messages = "Sorry no movies today 😭"
 
-# Process weather forecast (if Weather module is enabled)
-if weather_module_enabled and weather_latitude and weather_longitude:
-    condition, temperature_str = get_weather_forecast_by_coords(weather_latitude, weather_longitude)
-    if condition not in ["Weather data unavailable", "Weather data error"]:
-        if ai_enabled:
-            emoji = generate_emojis_from_text(condition, ai_api_key, num_emojis=1)
-            condition_line = f"{condition} {emoji}"
-        else:
-            condition_line = condition
-        weather_text_telegram = f"*__Today's Weather__*\n{escape_markdown_v2(condition_line)}\n{escape_markdown_v2(temperature_str)}"
-        weather_text_whatsapp = f"_*Today's Weather*_\n{condition_line}\n{temperature_str}"
+def get_news_headlines_for_categories(categories):
+    news_api_key = os.getenv("NEWS_API_KEY")
+    if not news_api_key:
+        return "News API key not configured"
+    country = os.getenv("NEWS_COUNTRY", "us")
+    headlines_per_category = []
+    for category in categories:
+        if category.lower() == "none":
+            continue
+        url = "https://newsapi.org/v2/top-headlines"
+        params = {
+            "apiKey": news_api_key,
+            "category": category,
+            "country": country,
+            "pageSize": 1
+        }
+        try:
+            response = requests.get(url, params=params, timeout=5)
+            data = response.json()
+            if data.get("status") == "ok":
+                articles = data.get("articles", [])
+                headlines = []
+                for article in articles:
+                    title = article.get("title", "No Title")
+                    description = article.get("description", "")
+                    article_url = article.get("url", "")
+                    raw_headline = f"{title} - {description}\n{article_url}"
+                    # Escape the headline text (if needed)
+                    escaped_headline = escape_markdown_v2(raw_headline)
+                    headlines.append(escaped_headline)
+                if headlines:
+                    headlines_per_category.append(f"*{category.capitalize()}*\n" + "\n-\n".join(headlines))
+            else:
+                headlines_per_category.append(f"*{category.capitalize()}* - News data unavailable")
+        except Exception as e:
+            headlines_per_category.append(f"*{category.capitalize()}* - Error: {e}")
+    if headlines_per_category:
+        return "\n\n".join(headlines_per_category)
     else:
-        weather_text_telegram = condition
-        weather_text_whatsapp = condition
+        return ""
+
+if news_enabled:
+    news_headlines = get_news_headlines_for_categories(news_categories)
+    news_text_telegram = f"*__News & Headlines__*\n{news_headlines}" if news_headlines else ""
+    news_text_whatsapp = f"_*News & Headlines*_\n{news_headlines}" if news_headlines else ""
 else:
-    weather_text_telegram = ""
-    weather_text_whatsapp = ""
+    news_text_telegram = ""
+    news_text_whatsapp = ""
 
-# Process custom day message (if Custom module is enabled)
-today_abbr = datetime.now().strftime("%a").lower()
-custom_message = ""
-if today_abbr == "mon":
-    custom_message = os.getenv("MON_MESSAGE", "")
-elif today_abbr == "tue":
-    custom_message = os.getenv("TUE_MESSAGE", "")
-elif today_abbr == "wed":
-    custom_message = os.getenv("WED_MESSAGE", "")
-elif today_abbr == "thu":
-    custom_message = os.getenv("THU_MESSAGE", "")
-elif today_abbr == "fri":
-    custom_message = os.getenv("FRI_MESSAGE", "")
-elif today_abbr == "sat":
-    custom_message = os.getenv("SAT_MESSAGE", "")
-elif today_abbr == "sun":
-    custom_message = os.getenv("SUN_MESSAGE", "")
-
-if custom_message:
-    custom_text_telegram = f"*__MOTD__*\n{escape_markdown_v2(custom_message)}"
-    custom_text_whatsapp = f"_*MOTD*_\n{custom_message}"
-else:
-    custom_text_telegram = ""
-    custom_text_whatsapp = ""
-
-# Build media content message (if Media module is enabled)
 if sonarr_messages.strip() or radarr_messages.strip():
     media_text_telegram = f"*__Today's Content__*\n📺 *TV Shows:*\n{escape_markdown_v2(sonarr_messages)}\n\n🎥 *Movies:*\n{escape_markdown_v2(radarr_messages)}"
     media_text_whatsapp = f"_*Today's Content*_\n📺 *TV Shows:*\n{sonarr_messages}\n\n🎥 *Movies:*\n{radarr_messages}"
@@ -212,7 +224,6 @@ else:
     media_text_telegram = ""
     media_text_whatsapp = ""
 
-# Compose final message based on enabled modules
 parts_telegram = []
 parts_whatsapp = []
 
@@ -225,6 +236,9 @@ if weather_module_enabled and weather_text_telegram:
 if media_enabled and media_text_telegram:
     parts_telegram.append(media_text_telegram)
     parts_whatsapp.append(media_text_whatsapp)
+if news_enabled and news_text_telegram:
+    parts_telegram.append(news_text_telegram)
+    parts_whatsapp.append(news_text_whatsapp)
 
 if not parts_telegram:
     print("No modules enabled or no content available; no message will be sent.")

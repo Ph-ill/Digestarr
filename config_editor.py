@@ -93,21 +93,25 @@ def index():
                 digestarr_ip = request.form.get('DIGESTARR_IP', '127.0.0.1')
                 digestarr_port = request.form.get('DIGESTARR_PORT', '5000')
                 
-                # Media Content settings (now in its own section)
+                # Media Content settings
                 sonarr_host = request.form.get('SONARR_HOST', '')
                 radarr_host = request.form.get('RADARR_HOST', '')
                 
-                # Module Enablement: new checkboxes from the Modules section
+                # Module Enablement flags
                 media_enabled = 'true' if 'MEDIA_ENABLED' in request.form else 'false'
                 custom_enabled = 'true' if 'CUSTOM_ENABLED' in request.form else 'false'
                 weather_enabled = 'true' if 'WEATHER_ENABLED' in request.form else 'false'
+                news_enabled = 'true' if 'NEWS_ENABLED' in request.form else 'false'
                 
                 # Weather settings
                 weather_latitude = request.form.get('WEATHER_LATITUDE', '')
                 weather_longitude = request.form.get('WEATHER_LONGITUDE', '')
                 weather_temp_unit = request.form.get('WEATHER_TEMP_UNIT', 'celsius').lower()
                 
-                # Custom Day Messages settings:
+                # News country setting
+                news_country = request.form.get('NEWS_COUNTRY', 'us')
+                
+                # Custom Day Messages settings
                 custom_days_list = [d.strip() for d in request.form.getlist('CUSTOM_DAYS') if d.strip()]
                 custom_days_str = ','.join(custom_days_list)
                 mon_message = request.form.get('MON_MESSAGE', '')
@@ -121,7 +125,6 @@ def index():
                 config_values = {
                     'DIGESTARR_IP': digestarr_ip,
                     'DIGESTARR_PORT': digestarr_port,
-                    # Moved to Media Content Settings:
                     'SONARR_HOST': sonarr_host,
                     'RADARR_HOST': radarr_host,
                     'NUM_RECIPIENTS': str(num_recipients),
@@ -130,11 +133,11 @@ def index():
                     'AI_ENABLED': 'true' if 'AI_ENABLED' in request.form else 'false',
                     'SCHEDULE_TIME': schedule_time,
                     'SCHEDULE_DAYS': schedule_days_str,
-                    # Weather settings
                     'WEATHER_LATITUDE': weather_latitude,
                     'WEATHER_LONGITUDE': weather_longitude,
                     'WEATHER_TEMP_UNIT': weather_temp_unit,
-                    # Custom Day Messages settings
+                    'NEWS_ENABLED': news_enabled,
+                    'NEWS_COUNTRY': news_country,
                     'CUSTOM_DAYS': custom_days_str,
                     'MON_MESSAGE': mon_message,
                     'TUE_MESSAGE': tue_message,
@@ -143,13 +146,13 @@ def index():
                     'FRI_MESSAGE': fri_message,
                     'SAT_MESSAGE': sat_message,
                     'SUN_MESSAGE': sun_message,
-                    # Module Enablement flags:
-                    'MEDIA_ENABLED': media_enabled,
                     'CUSTOM_ENABLED': custom_enabled,
-                    'WEATHER_ENABLED': weather_enabled
+                    'MEDIA_ENABLED': media_enabled,
+                    'WEATHER_ENABLED': weather_enabled,
+                    'NEWS_CATEGORY_1': request.form.get('NEWS_CATEGORY_1', 'none'),
+                    'NEWS_CATEGORY_2': request.form.get('NEWS_CATEGORY_2', 'none'),
+                    'NEWS_CATEGORY_3': request.form.get('NEWS_CATEGORY_3', 'none')
                 }
-                
-                # Removed warning block—allow saving even if no modules are enabled.
                 
                 save_to_env_file(config_env_file, config_values)
                 credentials_values = {
@@ -157,7 +160,8 @@ def index():
                     'RADARR_API_KEY': request.form['RADARR_API_KEY'],
                     'MISTRAL_API_KEY': request.form['MISTRAL_API_KEY'],
                     'OMDB_API_KEY': request.form['OMDB_API_KEY'],
-                    'TELEGRAM_TOKEN': request.form['TELEGRAM_TOKEN']
+                    'TELEGRAM_TOKEN': request.form['TELEGRAM_TOKEN'],
+                    'NEWS_API_KEY': request.form.get('NEWS_API_KEY', '')
                 }
                 for i in range(1, num_recipients + 1):
                     if request.form.get(f'PHONE_NUMBER_{i}', ''):
@@ -209,12 +213,12 @@ def index():
                 message = str(e)
                 logging.error(f"Error running main.py: {e}")
             return jsonify({'status': status, 'message': message})
-    load_dotenv(dotenv_path=config_env_file)
-    load_dotenv(dotenv_path=credentials_env_file)
+    # GET branch: load environment files with override=True.
+    load_dotenv(dotenv_path=config_env_file, override=True)
+    load_dotenv(dotenv_path=credentials_env_file, override=True)
     config_data = {
         'DIGESTARR_IP': os.getenv('DIGESTARR_IP', '127.0.0.1').strip(),
         'DIGESTARR_PORT': os.getenv('DIGESTARR_PORT', '5000'),
-        # Media settings moved here:
         'SONARR_HOST': os.getenv('SONARR_HOST', ''),
         'RADARR_HOST': os.getenv('RADARR_HOST', ''),
         'NUM_RECIPIENTS': os.getenv('NUM_RECIPIENTS', '1'),
@@ -234,23 +238,32 @@ def index():
         'FRI_MESSAGE': os.getenv('FRI_MESSAGE', ''),
         'SAT_MESSAGE': os.getenv('SAT_MESSAGE', ''),
         'SUN_MESSAGE': os.getenv('SUN_MESSAGE', ''),
-        # Module Enablement flags:
         'MEDIA_ENABLED': os.getenv('MEDIA_ENABLED', 'false'),
         'CUSTOM_ENABLED': os.getenv('CUSTOM_ENABLED', 'false'),
-        'WEATHER_ENABLED': os.getenv('WEATHER_ENABLED', 'false')
+        'WEATHER_ENABLED': os.getenv('WEATHER_ENABLED', 'false'),
+        'NEWS_ENABLED': os.getenv('NEWS_ENABLED', 'false'),
+        'NEWS_CATEGORY_1': os.getenv('NEWS_CATEGORY_1', 'none'),
+        'NEWS_CATEGORY_2': os.getenv('NEWS_CATEGORY_2', 'none'),
+        'NEWS_CATEGORY_3': os.getenv('NEWS_CATEGORY_3', 'none'),
+        'NEWS_COUNTRY': os.getenv('NEWS_COUNTRY', 'us')
     }
     credentials_data = {
         'SONARR_API_KEY': os.getenv('SONARR_API_KEY', ''),
         'RADARR_API_KEY': os.getenv('RADARR_API_KEY', ''),
         'MISTRAL_API_KEY': os.getenv('MISTRAL_API_KEY', ''),
         'OMDB_API_KEY': os.getenv('OMDB_API_KEY', ''),
-        'TELEGRAM_TOKEN': os.getenv('TELEGRAM_TOKEN', '')
+        'TELEGRAM_TOKEN': os.getenv('TELEGRAM_TOKEN', ''),
+        'NEWS_API_KEY': os.getenv('NEWS_API_KEY', '')
     }
     num_recipients = int(config_data['NUM_RECIPIENTS']) if config_data['NUM_RECIPIENTS'] else 1
     for i in range(1, num_recipients + 1):
         credentials_data[f'PHONE_NUMBER_{i}'] = os.getenv(f'PHONE_NUMBER_{i}', '')
         credentials_data[f'PHONE_NUMBER_{i}_API_KEY'] = os.getenv(f'PHONE_NUMBER_{i}_API_KEY', '')
-        credentials_data[f'TELEGRAM_CHAT_ID_{i}'] = os.getenv(f'TELEGRAM_CHAT_ID_{i}', '')
+        key = f'TELEGRAM_CHAT_ID_{i}'
+        if i == 1 and not os.getenv(key):
+            credentials_data[key] = os.getenv('TELEGRAM_CHAT_ID', '')
+        else:
+            credentials_data[key] = os.getenv(key, '')
     return render_template('index.html', config_data=config_data, credentials_data=credentials_data, num_recipients=num_recipients)
 
 def init_scheduler():

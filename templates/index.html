@@ -46,7 +46,6 @@
           </div>
           <div class="checkbox-container">
             <label for="AI_ENABLED">AI Features Enabled</label>
-            <!-- Force the AI checkbox to be checked on page load -->
             <input type="checkbox" id="ai-enabled-checkbox" name="AI_ENABLED" checked>
           </div>
           <!-- Telegram Token moved here -->
@@ -61,7 +60,7 @@
         </div>
       </div>
       
-      <!-- Scheduling Section (now second) -->
+      <!-- Scheduling Section -->
       <div class="section">
         <div class="section-header">
           <h2>Scheduling</h2>
@@ -83,7 +82,7 @@
         </div>
       </div>
       
-      <!-- Module Enablement Section (now third) -->
+      <!-- Module Enablement Section -->
       <div class="section">
         <div class="section-header">
           <h2>Digest Modules</h2>
@@ -102,10 +101,14 @@
             <label for="WEATHER_ENABLED">Weather</label>
             <input type="checkbox" id="module-weather-enabled-checkbox" name="WEATHER_ENABLED" {% if config_data.WEATHER_ENABLED == 'true' %}checked{% endif %}>
           </div>
+          <div class="checkbox-container">
+            <label for="NEWS_ENABLED">News & Headlines</label>
+            <input type="checkbox" id="news-enabled-checkbox" name="NEWS_ENABLED" {% if config_data.NEWS_ENABLED == 'true' %}checked{% endif %}>
+          </div>
         </div>
       </div>
       
-      <!-- Media Content Settings Section (now includes API Keys) -->
+      <!-- Media Content Settings Section -->
       <div class="section" id="media-content-section">
         <div class="section-header">
           <h2>Sonarr/Radarr Scheduled Content</h2>
@@ -116,7 +119,7 @@
           <input type="text" name="SONARR_HOST" value="{{ config_data.SONARR_HOST }}" placeholder="Enter the Sonarr Host address">
           <label for="RADARR_HOST">Radarr Host</label>
           <input type="text" name="RADARR_HOST" value="{{ config_data.RADARR_HOST }}" placeholder="Enter the Radarr Host address">
-          <!-- API Keys moved here -->
+          <!-- API Keys -->
           <label for="SONARR_API_KEY">Sonarr API Key</label>
           <input type="password" name="SONARR_API_KEY" value="{{ credentials_data.SONARR_API_KEY }}" placeholder="Enter your Sonarr API key">
           <label for="RADARR_API_KEY">Radarr API Key</label>
@@ -143,6 +146,68 @@
             <option value="celsius" {% if config_data.WEATHER_TEMP_UNIT == 'celsius' %}selected{% endif %}>Celsius</option>
             <option value="fahrenheit" {% if config_data.WEATHER_TEMP_UNIT == 'fahrenheit' %}selected{% endif %}>Fahrenheit</option>
           </select>
+        </div>
+      </div>
+      
+      <!-- News Settings Section -->
+      <div class="section" id="news-settings-section" style="display: {% if config_data.NEWS_ENABLED == 'true' %}block{% else %}none{% endif %};">
+        <div class="section-header">
+          <h2>News Settings</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
+          <div>
+            <label for="NEWS_API_KEY">NewsAPI Key</label>
+            <input type="password" name="NEWS_API_KEY" value="{{ credentials_data.NEWS_API_KEY or '' }}" placeholder="Enter your NewsAPI key">
+          </div>
+          <br>
+          <div>
+            <label for="NEWS_COUNTRY">News Country</label>
+            <input type="text" name="NEWS_COUNTRY" id="NEWS_COUNTRY" value="{{ config_data.NEWS_COUNTRY }}" placeholder="Enter two-letter country code (e.g., us)" required>
+            <p class="hint" style="font-size:0.9em;">Please use the 2-letter ISO 3166-1 code. <a href="https://www.iban.com/country-codes" target="_blank">Find your country code here</a>.</p>
+          </div>
+          <br>
+          <div>
+            <label for="NEWS_CATEGORY_1">News Category 1</label>
+            <select name="NEWS_CATEGORY_1" id="NEWS_CATEGORY_1">
+              <option value="none" {% if config_data.NEWS_CATEGORY_1 == 'none' %}selected{% endif %}>None</option>
+              <option value="general" {% if config_data.NEWS_CATEGORY_1 == 'general' %}selected{% endif %}>General</option>
+              <option value="business" {% if config_data.NEWS_CATEGORY_1 == 'business' %}selected{% endif %}>Business</option>
+              <option value="entertainment" {% if config_data.NEWS_CATEGORY_1 == 'entertainment' %}selected{% endif %}>Entertainment</option>
+              <option value="health" {% if config_data.NEWS_CATEGORY_1 == 'health' %}selected{% endif %}>Health</option>
+              <option value="science" {% if config_data.NEWS_CATEGORY_1 == 'science' %}selected{% endif %}>Science</option>
+              <option value="sports" {% if config_data.NEWS_CATEGORY_1 == 'sports' %}selected{% endif %}>Sports</option>
+              <option value="technology" {% if config_data.NEWS_CATEGORY_1 == 'technology' %}selected{% endif %}>Technology</option>
+            </select>
+          </div>
+          <br>
+          <div>
+            <label for="NEWS_CATEGORY_2">News Category 2</label>
+            <select name="NEWS_CATEGORY_2" id="NEWS_CATEGORY_2">
+              <option value="none" {% if config_data.NEWS_CATEGORY_2 == 'none' %}selected{% endif %}>None</option>
+              <option value="general" {% if config_data.NEWS_CATEGORY_2 == 'general' %}selected{% endif %}>General</option>
+              <option value="business" {% if config_data.NEWS_CATEGORY_2 == 'business' %}selected{% endif %}>Business</option>
+              <option value="entertainment" {% if config_data.NEWS_CATEGORY_2 == 'entertainment' %}selected{% endif %}>Entertainment</option>
+              <option value="health" {% if config_data.NEWS_CATEGORY_2 == 'health' %}selected{% endif %}>Health</option>
+              <option value="science" {% if config_data.NEWS_CATEGORY_2 == 'science' %}selected{% endif %}>Science</option>
+              <option value="sports" {% if config_data.NEWS_CATEGORY_2 == 'sports' %}selected{% endif %}>Sports</option>
+              <option value="technology" {% if config_data.NEWS_CATEGORY_2 == 'technology' %}selected{% endif %}>Technology</option>
+            </select>
+          </div>
+          <br>
+          <div>
+            <label for="NEWS_CATEGORY_3">News Category 3</label>
+            <select name="NEWS_CATEGORY_3" id="NEWS_CATEGORY_3">
+              <option value="none" {% if config_data.NEWS_CATEGORY_3 == 'none' %}selected{% endif %}>None</option>
+              <option value="general" {% if config_data.NEWS_CATEGORY_3 == 'general' %}selected{% endif %}>General</option>
+              <option value="business" {% if config_data.NEWS_CATEGORY_3 == 'business' %}selected{% endif %}>Business</option>
+              <option value="entertainment" {% if config_data.NEWS_CATEGORY_3 == 'entertainment' %}selected{% endif %}>Entertainment</option>
+              <option value="health" {% if config_data.NEWS_CATEGORY_3 == 'health' %}selected{% endif %}>Health</option>
+              <option value="science" {% if config_data.NEWS_CATEGORY_3 == 'science' %}selected{% endif %}>Science</option>
+              <option value="sports" {% if config_data.NEWS_CATEGORY_3 == 'sports' %}selected{% endif %}>Sports</option>
+              <option value="technology" {% if config_data.NEWS_CATEGORY_3 == 'technology' %}selected{% endif %}>Technology</option>
+            </select>
+          </div>
         </div>
       </div>
       
@@ -224,12 +289,13 @@
       const mediaEnabledCheckbox = document.getElementById('media-enabled-checkbox');
       const customEnabledCheckbox = document.getElementById('custom-enabled-checkbox');
       const moduleWeatherEnabledCheckbox = document.getElementById('module-weather-enabled-checkbox');
+      const newsEnabledCheckbox = document.getElementById('news-enabled-checkbox');
       
       const credentialsData = {
         {% for i in range(1, num_recipients + 1) %}
-          'PHONE_NUMBER_{{i}}': "{{ credentials_data['PHONE_NUMBER_' + i|string()] }}",
-          'PHONE_NUMBER_{{i}}_API_KEY': "{{ credentials_data['PHONE_NUMBER_' + i|string() + '_API_KEY'] }}",
-          'TELEGRAM_CHAT_ID_{{i}}': "{{ credentials_data['TELEGRAM_CHAT_ID_' + i|string()] }}",
+          'PHONE_NUMBER_{{ i }}': "{{ credentials_data['PHONE_NUMBER_' ~ i] }}",
+          'PHONE_NUMBER_{{ i }}_API_KEY': "{{ credentials_data['PHONE_NUMBER_' ~ i ~ '_API_KEY'] }}",
+          'TELEGRAM_CHAT_ID_{{ i }}': "{{ credentials_data['TELEGRAM_CHAT_ID_' ~ i] }}",
         {% endfor %}
       };
       
@@ -302,22 +368,23 @@
       }
       
       aiEnabledCheckbox.addEventListener('change', toggleMistralApiField);
-      // Call on load to set initial state
       toggleMistralApiField();
       
-      // Show/hide module-specific sections based on Module Enablement checkboxes
       function toggleModuleSections() {
         const mediaSection = document.getElementById('media-content-section');
         const customSection = document.getElementById('custom-messages-section');
         const weatherSection = document.getElementById('weather-section');
+        const newsSection = document.getElementById('news-settings-section');
         mediaSection.style.display = mediaEnabledCheckbox.checked ? 'block' : 'none';
         customSection.style.display = customEnabledCheckbox.checked ? 'block' : 'none';
         weatherSection.style.display = moduleWeatherEnabledCheckbox.checked ? 'block' : 'none';
+        newsSection.style.display = newsEnabledCheckbox.checked ? 'block' : 'none';
       }
       
       mediaEnabledCheckbox.addEventListener('change', toggleModuleSections);
       customEnabledCheckbox.addEventListener('change', toggleModuleSections);
       moduleWeatherEnabledCheckbox.addEventListener('change', toggleModuleSections);
+      newsEnabledCheckbox.addEventListener('change', toggleModuleSections);
       toggleModuleSections();
       
       function updateCustomDayMessages() {
@@ -338,7 +405,6 @@
         }
       });
       
-      // Call updateCustomDayMessages on load so pre-checked days show their fields
       updateCustomDayMessages();
       
       const testMsgBtn = document.getElementById('run-script-btn');
@@ -390,20 +456,16 @@
     document.addEventListener('DOMContentLoaded', function() {
       const toggleButtons = document.querySelectorAll('.collapsible-toggle');
       toggleButtons.forEach(button => {
-        // Initialize state
         button.dataset.collapsed = "false";
         button.addEventListener('click', function() {
           const sectionContent = this.parentElement.nextElementSibling;
-          const parentSection = this.parentElement.parentElement; // The .section div
-    
+          const parentSection = this.parentElement.parentElement;
           if (this.dataset.collapsed === "false") {
-            // Collapse
             sectionContent.style.display = 'none';
             this.style.transform = 'rotate(180deg)';
             this.dataset.collapsed = "true";
             parentSection.classList.add('collapsed');
           } else {
-            // Expand
             sectionContent.style.display = 'block';
             this.style.transform = 'rotate(0deg)';
             this.dataset.collapsed = "false";
@@ -412,7 +474,7 @@
         });
       });
     });
-    </script>
+  </script>
     
 </body>
 </html>
