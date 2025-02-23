@@ -1,5 +1,3 @@
----
-
 <div align="center">
   <img src="static/images/icon.png" alt="Digestarr Icon" width="128" height="128">
   <h1>Digestarr</h1>
@@ -213,6 +211,4 @@ Digestarr is released under the [MIT License](LICENSE).
 Contributions are welcome! Feel free to fork the repository and submit pull requests for improvements or bug fixes.
 
 *Note: Git is not required to run Digestarr—you can also download the source code as a ZIP from GitHub and follow the installation instructions above.*
-
----
 
