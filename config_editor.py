@@ -9,6 +9,7 @@ from pathlib import Path
 import subprocess
 import datetime
 from apscheduler.schedulers.background import BackgroundScheduler
+import json
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s')
 app = Flask(__name__)
@@ -102,14 +103,18 @@ def index():
                 custom_enabled = 'true' if 'CUSTOM_ENABLED' in request.form else 'false'
                 weather_enabled = 'true' if 'WEATHER_ENABLED' in request.form else 'false'
                 news_enabled = 'true' if 'NEWS_ENABLED' in request.form else 'false'
+                ticker_enabled = 'true' if 'TICKER_ENABLED' in request.form else 'false'
                 
                 # Weather settings
                 weather_latitude = request.form.get('WEATHER_LATITUDE', '')
                 weather_longitude = request.form.get('WEATHER_LONGITUDE', '')
                 weather_temp_unit = request.form.get('WEATHER_TEMP_UNIT', 'celsius').lower()
                 
-                # News country setting
+                # News country and categories
                 news_country = request.form.get('NEWS_COUNTRY', 'us')
+                news_category_1 = request.form.get('NEWS_CATEGORY_1', 'none')
+                news_category_2 = request.form.get('NEWS_CATEGORY_2', 'none')
+                news_category_3 = request.form.get('NEWS_CATEGORY_3', 'none')
                 
                 # Custom Day Messages settings
                 custom_days_list = [d.strip() for d in request.form.getlist('CUSTOM_DAYS') if d.strip()]
@@ -121,6 +126,9 @@ def index():
                 fri_message = request.form.get('FRI_MESSAGE', '')
                 sat_message = request.form.get('SAT_MESSAGE', '')
                 sun_message = request.form.get('SUN_MESSAGE', '')
+                
+                # Ticker module: receive ticker entries as JSON string
+                ticker_entries = request.form.get('TICKER_ENTRIES', '[]')
                 
                 config_values = {
                     'DIGESTARR_IP': digestarr_ip,
@@ -138,6 +146,9 @@ def index():
                     'WEATHER_TEMP_UNIT': weather_temp_unit,
                     'NEWS_ENABLED': news_enabled,
                     'NEWS_COUNTRY': news_country,
+                    'NEWS_CATEGORY_1': news_category_1,
+                    'NEWS_CATEGORY_2': news_category_2,
+                    'NEWS_CATEGORY_3': news_category_3,
                     'CUSTOM_DAYS': custom_days_str,
                     'MON_MESSAGE': mon_message,
                     'TUE_MESSAGE': tue_message,
@@ -149,9 +160,8 @@ def index():
                     'CUSTOM_ENABLED': custom_enabled,
                     'MEDIA_ENABLED': media_enabled,
                     'WEATHER_ENABLED': weather_enabled,
-                    'NEWS_CATEGORY_1': request.form.get('NEWS_CATEGORY_1', 'none'),
-                    'NEWS_CATEGORY_2': request.form.get('NEWS_CATEGORY_2', 'none'),
-                    'NEWS_CATEGORY_3': request.form.get('NEWS_CATEGORY_3', 'none')
+                    'TICKER_ENABLED': ticker_enabled,
+                    'TICKER_ENTRIES': ticker_entries
                 }
                 
                 save_to_env_file(config_env_file, config_values)
@@ -213,7 +223,6 @@ def index():
                 message = str(e)
                 logging.error(f"Error running main.py: {e}")
             return jsonify({'status': status, 'message': message})
-    # GET branch: load environment files with override=True.
     load_dotenv(dotenv_path=config_env_file, override=True)
     load_dotenv(dotenv_path=credentials_env_file, override=True)
     config_data = {
@@ -245,7 +254,9 @@ def index():
         'NEWS_CATEGORY_1': os.getenv('NEWS_CATEGORY_1', 'none'),
         'NEWS_CATEGORY_2': os.getenv('NEWS_CATEGORY_2', 'none'),
         'NEWS_CATEGORY_3': os.getenv('NEWS_CATEGORY_3', 'none'),
-        'NEWS_COUNTRY': os.getenv('NEWS_COUNTRY', 'us')
+        'NEWS_COUNTRY': os.getenv('NEWS_COUNTRY', 'us'),
+        'TICKER_ENABLED': os.getenv('TICKER_ENABLED', 'false'),
+        'TICKER_ENTRIES': os.getenv('TICKER_ENTRIES', '[]')
     }
     credentials_data = {
         'SONARR_API_KEY': os.getenv('SONARR_API_KEY', ''),

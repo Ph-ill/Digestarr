@@ -48,14 +48,14 @@
             <label for="AI_ENABLED">AI Features Enabled</label>
             <input type="checkbox" id="ai-enabled-checkbox" name="AI_ENABLED" checked>
           </div>
-          <!-- Telegram Token moved here -->
+          <!-- Telegram Token -->
           <div id="telegram-token-container">
             <label for="TELEGRAM_TOKEN">Telegram Token</label>
             <input type="password" id="telegram-token-field" name="TELEGRAM_TOKEN" value="{{ credentials_data.TELEGRAM_TOKEN }}" placeholder="Enter your Telegram bot Token">
           </div>
-          <!-- Dynamically generated recipient fields now appear here -->
+          <!-- Recipient fields -->
           <div id="recipient-fields-container">
-            <!-- JS will insert recipient fields below these checkboxes -->
+            <!-- JS will insert recipient fields -->
           </div>
         </div>
       </div>
@@ -104,6 +104,10 @@
           <div class="checkbox-container">
             <label for="NEWS_ENABLED">News & Headlines</label>
             <input type="checkbox" id="news-enabled-checkbox" name="NEWS_ENABLED" {% if config_data.NEWS_ENABLED == 'true' %}checked{% endif %}>
+          </div>
+          <div class="checkbox-container">
+            <label for="TICKER_ENABLED">Crypto/Stock Tickers</label>
+            <input type="checkbox" id="ticker-enabled-checkbox" name="TICKER_ENABLED" {% if config_data.TICKER_ENABLED == 'true' %}checked{% endif %}>
           </div>
         </div>
       </div>
@@ -164,7 +168,7 @@
           <div>
             <label for="NEWS_COUNTRY">News Country</label>
             <input type="text" name="NEWS_COUNTRY" id="NEWS_COUNTRY" value="{{ config_data.NEWS_COUNTRY }}" placeholder="Enter two-letter country code (e.g., us)" required>
-            <p class="hint" style="font-size:0.9em;">Please use the 2-letter ISO 3166-1 code. <a href="https://www.iban.com/country-codes" target="_blank">Find your country code here</a>.</p>
+            <p class="hint" style="font-size:0.9em;">Please use the 2-letter ISO 3166‑1 code. <a href="https://www.iban.com/country-codes" target="_blank">Find your country code here</a>.</p>
           </div>
           <br>
           <div>
@@ -208,6 +212,20 @@
               <option value="technology" {% if config_data.NEWS_CATEGORY_3 == 'technology' %}selected{% endif %}>Technology</option>
             </select>
           </div>
+        </div>
+      </div>
+      
+      <!-- Crypto/Stock Tickers Section -->
+      <div class="section" id="ticker-settings-section" style="display: {% if config_data.TICKER_ENABLED == 'true' %}block{% else %}none{% endif %};">
+        <div class="section-header">
+          <h2>Crypto/Stock Tickers</h2>
+          <button type="button" class="collapsible-toggle">▼</button>
+        </div>
+        <div class="section-content">
+          <div id="ticker-entries-container">
+            <!-- JS will generate the first ticker entry -->
+          </div>
+          <p><a href="#" id="add-ticker-link" style="font-size:0.9em;">Add another</a></p>
         </div>
       </div>
       
@@ -276,7 +294,7 @@
     <p>MIT Licensed. Developed by <a href="https://github.com/Ph-ill" target="_blank"><strong>Ph-ill</strong></a></p>
   </footer>
   
-  <!-- Existing Script for dynamic fields and testing -->
+  <!-- JavaScript for dynamic fields and collapsible sections -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       const numRecipientsInput = document.getElementById('NUM_RECIPIENTS');
@@ -290,7 +308,9 @@
       const customEnabledCheckbox = document.getElementById('custom-enabled-checkbox');
       const moduleWeatherEnabledCheckbox = document.getElementById('module-weather-enabled-checkbox');
       const newsEnabledCheckbox = document.getElementById('news-enabled-checkbox');
+      const tickerEnabledCheckbox = document.getElementById('ticker-enabled-checkbox');
       
+      // Recipient fields rendering (same as before)
       const credentialsData = {
         {% for i in range(1, num_recipients + 1) %}
           'PHONE_NUMBER_{{ i }}': "{{ credentials_data['PHONE_NUMBER_' ~ i] }}",
@@ -375,85 +395,50 @@
         const customSection = document.getElementById('custom-messages-section');
         const weatherSection = document.getElementById('weather-section');
         const newsSection = document.getElementById('news-settings-section');
+        const tickerSection = document.getElementById('ticker-settings-section');
         mediaSection.style.display = mediaEnabledCheckbox.checked ? 'block' : 'none';
         customSection.style.display = customEnabledCheckbox.checked ? 'block' : 'none';
         weatherSection.style.display = moduleWeatherEnabledCheckbox.checked ? 'block' : 'none';
         newsSection.style.display = newsEnabledCheckbox.checked ? 'block' : 'none';
+        tickerSection.style.display = tickerEnabledCheckbox.checked ? 'block' : 'none';
       }
       
       mediaEnabledCheckbox.addEventListener('change', toggleModuleSections);
       customEnabledCheckbox.addEventListener('change', toggleModuleSections);
       moduleWeatherEnabledCheckbox.addEventListener('change', toggleModuleSections);
       newsEnabledCheckbox.addEventListener('change', toggleModuleSections);
+      tickerEnabledCheckbox.addEventListener('change', toggleModuleSections);
       toggleModuleSections();
       
-      function updateCustomDayMessages() {
-        const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-        days.forEach(day => {
-          const checkbox = document.getElementById('custom-' + day + '-checkbox');
-          const messageDiv = document.getElementById('custom-' + day + '-message');
-          if (checkbox && messageDiv) {
-            messageDiv.style.display = checkbox.checked ? 'block' : 'none';
-          }
-        });
+      // --- Ticker entries dynamic fields ---
+      const tickerContainer = document.getElementById('ticker-entries-container');
+      document.getElementById('add-ticker-link').addEventListener('click', function(e) {
+        e.preventDefault();
+        addTickerEntry();
+      });
+      
+      function addTickerEntry() {
+        const entryDiv = document.createElement('div');
+        entryDiv.classList.add('ticker-entry');
+        entryDiv.innerHTML = `
+          <label>Ticker Type</label>
+          <select name="TICKER_TYPE">
+            <option value="crypto">Crypto</option>
+            <option value="stock">Stock</option>
+          </select>
+          <label>Ticker Symbol</label>
+          <input type="text" name="TICKER_SYMBOL" placeholder="e.g., bitcoin or AAPL" required>
+          <hr>
+        `;
+        tickerContainer.appendChild(entryDiv);
       }
       
-      ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].forEach(day => {
-        const checkbox = document.getElementById('custom-' + day + '-checkbox');
-        if (checkbox) {
-          checkbox.addEventListener('change', updateCustomDayMessages);
-        }
-      });
+      // Add one initial ticker entry if none exists
+      if (!tickerContainer.hasChildNodes()) {
+        addTickerEntry();
+      }
       
-      updateCustomDayMessages();
-      
-      const testMsgBtn = document.getElementById('run-script-btn');
-      testMsgBtn.addEventListener('click', function(event) {
-        event.preventDefault();
-        const originalText = testMsgBtn.textContent;
-        testMsgBtn.textContent = "Sending...";
-        testMsgBtn.disabled = true;
-        const formData = new FormData();
-        formData.append('action', 'run_script');
-        fetch(window.location.href, {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          let msg = data.message;
-          if (data.status === 'error') {
-            msg = "Error: " + msg;
-          }
-          testMsgBtn.textContent = originalText;
-          testMsgBtn.disabled = false;
-          showModal(msg);
-        })
-        .catch(error => {
-          console.error('Error:', error);
-          testMsgBtn.textContent = originalText;
-          testMsgBtn.disabled = false;
-          showModal("An unexpected error occurred.");
-        });
-      });
-    });
-    
-    const modal = document.getElementById("modal");
-    const modalMessage = document.getElementById("modal-message");
-    const closeModal = document.getElementsByClassName("close")[0];
-    
-    function showModal(message) {
-      modalMessage.textContent = message;
-      modal.style.display = "block";
-    }
-    
-    closeModal.onclick = function() {
-      modal.style.display = "none";
-    };
-  </script>
-  
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
+      // Collapsible toggle functionality
       const toggleButtons = document.querySelectorAll('.collapsible-toggle');
       toggleButtons.forEach(button => {
         button.dataset.collapsed = "false";
@@ -475,6 +460,5 @@
       });
     });
   </script>
-    
 </body>
 </html>

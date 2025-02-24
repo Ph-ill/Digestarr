@@ -11,6 +11,7 @@ from radarr.rest import ApiException as RadarrApiException
 from functions import generate_emojis_from_text, add_leading_zero_if_single_digit, format_air_time, get_weather_forecast_by_coords
 from pprint import pprint
 import re
+import json
 
 load_dotenv(dotenv_path='config.env', override=True)
 load_dotenv(dotenv_path='credentials.env', override=True)
@@ -34,6 +35,7 @@ media_enabled = os.getenv('MEDIA_ENABLED', 'false').lower() == 'true'
 custom_enabled = os.getenv('CUSTOM_ENABLED', 'false').lower() == 'true'
 weather_module_enabled = os.getenv('WEATHER_ENABLED', 'false').lower() == 'true'
 news_enabled = os.getenv('NEWS_ENABLED', 'false').lower() == 'true'
+ticker_enabled = os.getenv('TICKER_ENABLED', 'false').lower() == 'true'
 
 # Weather settings
 weather_latitude = os.getenv('WEATHER_LATITUDE', '')
@@ -46,7 +48,14 @@ news_category_3 = os.getenv('NEWS_CATEGORY_3', 'none')
 news_categories = [news_category_1, news_category_2, news_category_3]
 news_country = os.getenv('NEWS_COUNTRY', 'us')
 
-timedeltastore = 0
+# Ticker module: expect TICKER_ENTRIES as a JSON string (list of objects with keys "type" and "symbol")
+try:
+    ticker_entries = json.loads(os.getenv('TICKER_ENTRIES', '[]'))
+except Exception:
+    ticker_entries = []
+
+#Adjust the date for sonarr/radarr calendar module, keep at 0 for current date, -1 for previous day etc. 
+day_adjust = 0
 
 sonarr_configuration = sonarr.Configuration(host=sonarr_host)
 sonarr_configuration.api_key['apikey'] = sonarr_api_key
@@ -56,7 +65,23 @@ radarr_configuration = radarr.Configuration(host=radarr_host)
 radarr_configuration.api_key['apikey'] = radarr_api_key
 radarr_configuration.api_key['X-Api-Key'] = radarr_api_key
 
-today = str(date.today() + timedelta(days=timedeltastore))
+def adjust_to_utc(dt):
+    """
+    Adjust a given datetime object to UTC based on the system's local timezone.
+    If the datetime is naive (has no tzinfo), it is assumed to be in local time.
+    """
+    # If dt is naive, attach the local timezone.
+    if dt.tzinfo is None:
+        local_tz = datetime.now().astimezone().tzinfo
+        dt = dt.replace(tzinfo=local_tz)
+    # Convert to UTC.
+    return dt.astimezone(timezone.utc)
+
+# Example usage:
+local_dt = datetime.now().replace(hour=15, minute=30, second=0, microsecond=0)  # local time at 15:30
+utc_dt = adjust_to_utc(local_dt)
+#print("Local:", local_dt)
+#print("UTC:", utc_dt)
 
 def escape_markdown_v2(text):
     escape_chars = r'_*\[\]()~`>#+\-=|{}.!'
@@ -92,15 +117,23 @@ def parse_movie_resource(resource_obj):
 
 with radarr.ApiClient(radarr_configuration) as radarr_api_client:
     radarr_api_instance = radarr.CalendarApi(radarr_api_client)
-    start = today + 'T00:00:00'
-    end = today + 'T23:59:59'
+ 
+    current_date = datetime.now()
+    start_current_tz = current_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_utc = adjust_to_utc(start_current_tz)
+    end_current_tz = current_date.replace(hour=23,minute=59,second=59,microsecond=999999)
+    end_utc = adjust_to_utc(end_current_tz)
+    start = str(start_utc + timedelta(days=day_adjust))
+    print("radarr")
+    print("start: "+start)
+    end = str(end_utc + timedelta(days=day_adjust))
+    print("end: "+end)
+
     try:
         radarr_api_response = radarr_api_instance.list_calendar(start=start, end=end)
         parsed_movies = [parse_movie_resource(movie) for movie in radarr_api_response]
     except RadarrApiException as e:
         print(f"Exception when calling CalendarApi->list_calendar: {e}\n")
-
-current_time = datetime.now() + timedelta(days=timedeltastore)
 
 def parse_episode_resource(resource_obj):
     parsed_data = {
@@ -120,8 +153,15 @@ def parse_episode_resource(resource_obj):
 
 with sonarr.ApiClient(sonarr_configuration) as api_client:
     api_instance = sonarr.CalendarApi(api_client)
-    start = today + 'T00:00:00+06:00'
-    end = today + 'T23:59:59+06:00'
+
+    current_date = datetime.now()
+    start_current_tz = current_date.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_utc = adjust_to_utc(start_current_tz)
+    end_current_tz = current_date.replace(hour=23,minute=59,second=59,microsecond=999999)
+    end_utc = adjust_to_utc(end_current_tz)
+    start = str(start_utc + timedelta(days=day_adjust))
+    end = str(end_utc + timedelta(days=day_adjust))
+
     unmonitored = False
     include_series = False
     include_episode_file = False
@@ -168,7 +208,7 @@ radarr_messages = "\n-\n".join([
 if not radarr_messages:
     radarr_messages = "Sorry no movies today 😭"
 
-# --- New functions for generating weather and custom message text ---
+# --- New functions for weather and custom messages ---
 
 def get_weather_text():
     if weather_module_enabled and weather_latitude and weather_longitude:
@@ -215,6 +255,62 @@ def get_custom_text():
         custom_text_whatsapp = ""
     return custom_text_telegram, custom_text_whatsapp
 
+# New functions for fetching ticker data
+def get_crypto_ticker(ticker):
+    # Using CoinGecko’s simple price endpoint
+    url = "https://api.coingecko.com/api/v3/simple/price"
+    params = {
+        "ids": ticker.lower(),  # user should enter the coin id (e.g. "bitcoin")
+        "vs_currencies": "usd",
+        "include_24hr_change": "true"
+    }
+    try:
+        response = requests.get(url, params=params, timeout=5)
+        data = response.json()
+        if ticker.lower() in data:
+            price = data[ticker.lower()]["usd"]
+            change = data[ticker.lower()]["usd_24h_change"]
+            return price, change
+        else:
+            return None, None
+    except Exception as e:
+        print(f"Error fetching crypto data for {ticker}: {e}")
+        return None, None
+
+def get_stock_ticker(ticker):
+    # Using Yahoo's unofficial endpoint
+    url = f"https://query1.finance.yahoo.com/v7/finance/quote?symbols={ticker.upper()}"
+    try:
+        response = requests.get(url, timeout=5)
+        data = response.json()
+        result = data.get("quoteResponse", {}).get("result", [])
+        if result:
+            price = result[0].get("regularMarketPrice", None)
+            change = result[0].get("regularMarketChangePercent", None)
+            return price, change
+        else:
+            return None, None
+    except Exception as e:
+        print(f"Error fetching stock data for {ticker}: {e}")
+        return None, None
+
+def format_ticker_line(ticker_type, ticker_symbol):
+    # Decide on an emoji for the ticker type:
+    type_emoji = "🪙" if ticker_type == "crypto" else "📈"
+    # Fetch data accordingly:
+    if ticker_type == "crypto":
+        price, change = get_crypto_ticker(ticker_symbol)
+    else:
+        price, change = get_stock_ticker(ticker_symbol)
+    if price is None or change is None:
+        return f"{type_emoji} - {ticker_symbol.upper()} - Data unavailable"
+    # Choose change emoji:
+    change_emoji = "🟢" if change >= 0 else "🔴"
+    # Format the value (round price and change percent)
+    price_formatted = f"{price:.2f}"
+    change_formatted = f"{change:.2f}%"
+    return f"{type_emoji} - {ticker_symbol.upper()} - ${price_formatted} - {change_emoji} - {change_formatted}"
+
 # Generate news headlines
 def get_news_headlines_for_categories(categories):
     news_api_key = os.getenv("NEWS_API_KEY")
@@ -229,7 +325,7 @@ def get_news_headlines_for_categories(categories):
             "apiKey": news_api_key,
             "category": category,
             "country": news_country,
-            "pageSize": 1   # Limit to 1 headline per category
+            "pageSize": 1
         }
         try:
             response = requests.get(url, params=params, timeout=5)
@@ -271,6 +367,21 @@ else:
     media_text_telegram = ""
     media_text_whatsapp = ""
 
+# Generate ticker text
+ticker_text_telegram = ""
+ticker_text_whatsapp = ""
+if ticker_enabled and ticker_entries:
+    ticker_lines = []
+    for entry in ticker_entries:
+        # Each entry should be a dict with keys "type" and "symbol"
+        ticker_type = entry.get("type", "stock").lower()
+        ticker_symbol = entry.get("symbol", "")
+        if ticker_symbol:
+            ticker_lines.append(format_ticker_line(ticker_type, ticker_symbol))
+    if ticker_lines:
+        ticker_text_telegram = "*__Ticker Data__*\n" + "\n".join(ticker_lines)
+        ticker_text_whatsapp = "_*Ticker Data*_\n" + "\n".join(ticker_lines)
+
 # Compose final message based on enabled modules
 custom_text_telegram, custom_text_whatsapp = get_custom_text()
 weather_text_telegram, weather_text_whatsapp = get_weather_text()
@@ -290,6 +401,9 @@ if media_enabled and media_text_telegram:
 if news_enabled and news_text_telegram:
     parts_telegram.append(news_text_telegram)
     parts_whatsapp.append(news_text_whatsapp)
+if ticker_enabled and ticker_text_telegram:
+    parts_telegram.append(ticker_text_telegram)
+    parts_whatsapp.append(ticker_text_whatsapp)
 
 if not parts_telegram:
     print("No modules enabled or no content available; no message will be sent.")
