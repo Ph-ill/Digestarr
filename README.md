@@ -3,7 +3,7 @@
   <h1>Digestarr</h1>
 </div>
 
-**Digestarr** (pronounced “di-JEST-arr”) is a Python-based tool that compiles and sends daily media digests about new TV shows and movies sourced from Sonarr and Radarr for your Plex, Jellyfin, or Emby server. With a user-friendly Flask configurator, Digestarr simplifies managing API keys, scheduling updates, and delivering notifications via Telegram and WhatsApp (using [ChatMeBot](https://chatmebot.com)).
+**Digestarr** (pronounced “di-JEST-arr”) is a Python‑based tool that compiles and sends daily media digests about new TV shows and movies sourced from Sonarr and Radarr for your Plex, Jellyfin, or Emby server. With a user‑friendly Flask configurator, Digestarr simplifies managing API keys, scheduling updates, and delivering notifications via Telegram and WhatsApp (using [ChatMeBot](https://chatmebot.com)).
 
 ---
 
@@ -11,12 +11,14 @@
 
 - **Daily Media Digest:** Automatically compiles and sends daily digests that include:
   - **Media Content:** New TV shows and movies fetched from Sonarr and Radarr, including air times, season/episode details, and IMDb ratings via OMDB.
-  - **Weather Forecast:** Displays daily weather information using the Open-Meteo API.
+  - **Weather Forecast:** Displays daily weather information using the Open‑Meteo API.
   - **Message of the Day:** Allows you to set custom daily messages.
+  - **News & Headlines:** Retrieves a brief headline for one category each (General, Business, etc.) via NewsAPI.
+  - **Crypto/Stock Tickers:** Displays current prices and 24‑hour changes for selected crypto or stock tickers. (Crypto data is retrieved from CoinGecko and stock data from Yahoo’s unofficial API.)
 - **Flexible Scheduling:** Configure specific days and times for digest delivery using APScheduler.
-- **Multi-Channel Messaging:** Send notifications via Telegram and WhatsApp.
+- **Multi‑Channel Messaging:** Send notifications via Telegram and WhatsApp.
 - **AI Integration (Optional):** Enable AI features (via the Mistral API) to generate emoji enhancements for your digest.
-- **User-Friendly Configurator:** A Flask-based web interface to manage media hosts, API keys, credentials, module enablement, and scheduling.
+- **User‑Friendly Configurator:** A Flask‑based web interface to manage media hosts, API keys, credentials, module enablement, and scheduling.
 - **Planned Third‑Party Modules:** Future support will allow users to create and install third‑party modules to further customize their daily digest experience.
 
 ---
@@ -116,7 +118,7 @@ sudo systemctl enable digestarr.service
 
 ### Running the Configurator Manually
 
-Digestarr’s configurator is a Flask-based web interface that lets you configure media hosts, API keys, credentials, module enablement, and scheduling.
+Digestarr’s configurator is a Flask‑based web interface that lets you configure media hosts, API keys, credentials, module enablement, and scheduling.
 
 1. **Start the Configurator:**
 
@@ -132,9 +134,10 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 
    - Enter your Sonarr and Radarr host addresses and specify the number of recipients.
    - Enable Telegram and/or WhatsApp (WhatsApp messages are sent using [ChatMeBot](https://chatmebot.com)).
-   - Provide the necessary API keys (Sonarr, Radarr, Mistral, OMDB, Telegram, etc.).
+   - Provide the necessary API keys (Sonarr, Radarr, Mistral, OMDB, Telegram, NewsAPI, etc.).
    - Set the scheduled time (e.g., `09:38`) and select the days for the digest.
-   - Toggle modules for Media Content, Weather, and Message of the Day.
+   - Toggle modules for Media Content, Weather, Message of the Day, News & Headlines, and Crypto/Stock Tickers.
+   - In the Crypto/Stock Tickers section, select the type (crypto or stock) and enter the ticker symbol. You may add additional tickers as needed.
    - Use the **Send Test Message** button to verify your configuration in real time.
       - When clicked, the button will display a loading indicator until a modal shows the result.
 
@@ -164,9 +167,10 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 - **Messaging:** Notifications are delivered via Telegram and WhatsApp (using ChatMeBot).
 - **Modules:** The digest is composed of multiple modules:
   - **Media Content:** Retrieves data from Sonarr and Radarr.
-  - **Weather Forecast:** Fetches the day’s weather using the Open-Meteo API.
+  - **Weather Forecast:** Fetches the day’s weather using the Open‑Meteo API.
   - **Message of the Day:** Displays a custom message if configured.
-  - **AI Enhancements:** Optionally adds emoji enhancements to media titles.
+  - **News & Headlines:** Pulls a brief headline for one category each using NewsAPI.
+  - **Crypto/Stock Tickers:** Fetches current prices and 24‑hour changes for user‑specified crypto or stock tickers (using CoinGecko for crypto and Yahoo’s unofficial API for stocks).
 - **Logging:** Console logs provide insight into scheduler initialization and job execution for troubleshooting.
 
 ---
@@ -175,14 +179,16 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 
 ### Current Features
 
-- Web-based configurator for managing API keys, credentials, module enablement, and scheduling.
+- Web‑based configurator for managing API keys, credentials, module enablement, and scheduling.
 - Scheduled execution of `main.py` to send daily media digests.
-- Integration with Sonarr, Radarr, OMDB, and the Open-Meteo API.
-- Multi-channel messaging via Telegram and WhatsApp.
-- Built-in modules:
+- Integration with Sonarr, Radarr, OMDB, and the Open‑Meteo API.
+- Multi‑channel messaging via Telegram and WhatsApp.
+- Built‑in modules:
   - **Media Content**
   - **Weather Forecast**
   - **Message of the Day**
+  - **News & Headlines**
+  - **Crypto/Stock Tickers**
 - Optional AI integration for emoji generation.
 
 ### Upcoming Improvements
@@ -190,7 +196,7 @@ Digestarr’s configurator is a Flask-based web interface that lets you configur
 - Enhanced AI capabilities: Personalized summaries and recommendation engines.
 - Expanded messaging platforms.
 - More robust logging (console and file).
-- **Third-Party Modules:** Ability for users to create and install third-party modules to customize their daily digest further.
+- **Third‑Party Modules:** Ability for users to create and install third‑party modules to customize their daily digest further.
 
 ### Known Issues
 
@@ -211,4 +217,3 @@ Digestarr is released under the [MIT License](LICENSE).
 Contributions are welcome! Feel free to fork the repository and submit pull requests for improvements or bug fixes.
 
 *Note: Git is not required to run Digestarr—you can also download the source code as a ZIP from GitHub and follow the installation instructions above.*
-
